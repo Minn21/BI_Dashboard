@@ -6,7 +6,7 @@ export default function FilterDropdown() {
 
   return (
     <Menu as="div" className="relative">
-      <Menu.Button className="bg-white p-2 rounded-lg shadow-sm border border-gray-200">
+      <Menu.Button className="bg-gray p-2 rounded-lg shadow-sm border border-gray-200">
         Filter by
       </Menu.Button>
       <Transition
@@ -25,7 +25,7 @@ export default function FilterDropdown() {
                 <button
                   className={`${
                     active ? 'bg-gray-100' : ''
-                  } block w-full text-left px-4 py-2 text-sm text-gray-700`}
+                  } block w-full text-left px-4 py-2 text-sm text-black-700`}
                 >
                   {filter}
                 </button>
