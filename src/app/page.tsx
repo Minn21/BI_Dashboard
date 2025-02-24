@@ -11,11 +11,11 @@ import {
   MetricsCard as ComponentMetricsCard,
   FilterDropdown,
   SearchBar,
-  WeatherWidget,
   NotificationBell,
   GuestSatisfaction,
   CoffeeBreakTimer
 } from '../components/components';
+import { WeatherWidget } from '../components/WeatherWidget';
 
 const Dashboard = () => {
   return (

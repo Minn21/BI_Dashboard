@@ -3,7 +3,9 @@ import React, { ReactNode, Fragment, useState, useEffect } from 'react';
 import { TrendingUp, TrendingDown, Home, DollarSign, Users, Calendar, Gift, Bell, Star, Coffee, Sun, Moon } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend, ReferenceLine } from 'recharts';
 import { Menu, Transition } from '@headlessui/react';
+import { FullScreenChartModal } from './FullScreenChartModal';
 import { format } from 'date-fns';
+import { api } from './api';
 import toast from 'react-hot-toast';
 
 // Types and Interfaces
@@ -26,20 +28,19 @@ interface Insight {
     trend?: string;
 }
 
-interface Birthday {
+interface GuestBirthday {
     name: string;
-    date: string;
-    room: string;
-}
-
-interface PieData {
-    name: string;
-    value: number;
+    birthday: string;
 }
 
 interface ArrivalData {
     date: string;
     arrivals: number;
+}
+
+interface OccupancyADR {
+    occupancy_rate: number;
+    adr: number;
 }
 
 // Layout Component
@@ -168,126 +169,148 @@ export function KeyInsights() {
     );
 }
 
-// Member vs General Chart Component
 export function MemberVsGeneralChart() {
-    const data: PieData[] = [
-        { name: 'Members', value: 65 },
-        { name: 'General Guests', value: 35 },
-    ];
+    const [data, setData] = useState<{ name: string; value: number; }[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [isFullScreen, setIsFullScreen] = useState(false);
+
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const result = await api.getMemberVsGeneral();
+                setData([
+                    { name: 'Members', value: result.member_arrivals },
+                    { name: 'General Guests', value: result.general_arrivals }
+                ]);
+            } catch {
+                toast.error('Failed to load member data');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchData();
+    }, []);
+
+    if (loading) return <LoadingCard />;
 
     const COLORS = ['#3B82F6', '#10B981'];
 
+    // Function to handle Gemini analysis
+    const handleAnalyzeWithGemini = () => {
+        toast.success('Analyzing with Gemini...');
+        // Add your Gemini analysis logic here
+    };
+
     return (
-        <div className="bg-gray-900 p-6 rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300">
-            <h3 className="text-xl font-semibold text-gray-100 mb-4">
-                Member vs. General Guests
-            </h3>
-            <div className="text-center mb-4">
-                <div className="flex justify-center gap-6">
-                    <div className="flex items-center">
-                        <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: COLORS[0] }}></div>
-                        <span className="text-gray-300">Members: {data[0].value}%</span>
-                    </div>
-                    <div className="flex items-center">
-                        <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: COLORS[1] }}></div>
-                        <span className="text-gray-300">Guests: {data[1].value}%</span>
+        <>
+            <div
+                className="bg-gray-900 p-6 rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 cursor-pointer"
+                onClick={() => setIsFullScreen(true)}
+            >
+                <h3 className="text-xl font-semibold text-gray-100 mb-4">
+                    Member vs. General Guests
+                </h3>
+                <div className="text-center mb-4">
+                    <div className="flex justify-center gap-6">
+                        <div className="flex items-center">
+                            <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: COLORS[0] }}></div>
+                            <span className="text-gray-300">Members: {data[0].value}%</span>
+                        </div>
+                        <div className="flex items-center">
+                            <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: COLORS[1] }}></div>
+                            <span className="text-gray-300">Guests: {data[1].value}%</span>
+                        </div>
                     </div>
                 </div>
+                <ResponsiveContainer width="100%" height={250}>
+                    <PieChart>
+                        <Pie
+                            data={data}
+                            dataKey="value"
+                            cx="50%"
+                            cy="50%"
+                            outerRadius={80}
+                            innerRadius={50}
+                            paddingAngle={5}
+                            stroke="none"
+                        >
+                            {data.map((_, index) => (
+                                <Cell
+                                    key={`cell-${index}`}
+                                    fill={COLORS[index % COLORS.length]}
+                                    className="hover:opacity-80 transition-opacity duration-300"
+                                />
+                            ))}
+                        </Pie>
+                        <Tooltip
+                            contentStyle={{
+                                backgroundColor: '#1F2937',
+                                border: 'none',
+                                borderRadius: '0.5rem',
+                                padding: '0.5rem',
+                            }}
+                            itemStyle={{ color: '#E5E7EB' }}
+                        />
+                    </PieChart>
+                </ResponsiveContainer>
             </div>
-            <ResponsiveContainer width="100%" height={250}>
-                <PieChart>
-                    <Pie
-                        data={data}
-                        dataKey="value"
-                        cx="50%"
-                        cy="50%"
-                        outerRadius={80}
-                        innerRadius={50}
-                        paddingAngle={5}
-                        stroke="none"
-                    >
-                        {data.map((_, index) => (
-                            <Cell
-                                key={`cell-${index}`}
-                                fill={COLORS[index % COLORS.length]}
-                                className="hover:opacity-80 transition-opacity duration-300"
-                            />
-                        ))}
-                    </Pie>
-                    <Tooltip
-                        contentStyle={{
-                            backgroundColor: '#1F2937',
-                            border: 'none',
-                            borderRadius: '0.5rem',
-                            padding: '0.5rem',
-                        }}
-                        itemStyle={{ color: '#E5E7EB' }}
-                    />
-                </PieChart>
-            </ResponsiveContainer>
-        </div>
+
+            {isFullScreen && (
+                <FullScreenChartModal
+                    data={data}
+                    onClose={() => setIsFullScreen(false)}
+                    onAnalyzeWithGemini={handleAnalyzeWithGemini} // Pass the Gemini analysis function
+                />
+            )}
+        </>
     );
 }
 
-// Occupancy Rate Component
+// Update OccupancyRate to use real data
 export function OccupancyRate() {
-    const weeklyData = [
-        { day: 'Mon', rate: 75 },
-        { day: 'Tue', rate: 82 },
-        { day: 'Wed', rate: 78 },
-        { day: 'Thu', rate: 85 },
-        { day: 'Fri', rate: 90 },
-        { day: 'Sat', rate: 88 },
-        { day: 'Sun', rate: 72 },
-    ];
+    const [occupancyData, setOccupancyData] = useState<OccupancyADR | null>(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const result = await api.getOccupancyAndADR();
+                setOccupancyData(result);
+            } catch (error) {
+                toast.error('Failed to load occupancy data');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchData();
+    }, []);
+
+    if (loading) return <LoadingCard />;
 
     return (
         <div className="bg-gray-900 p-6 rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300">
             <div className="flex items-center justify-between mb-6">
                 <h3 className="text-xl font-semibold text-gray-100">Occupancy & ADR</h3>
-                <span className="text-sm text-green-400">+12% vs last week</span>
             </div>
 
             <div className="grid gap-6">
                 <div className="p-4 rounded-lg bg-gray-800/50">
                     <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                            <div className="p-2 rounded-lg bg-blue-500/10">
-                                <TrendingUp className="w-5 h-5 text-blue-500" />
-                            </div>
-                            <span className="text-gray-400">Occupancy Rate</span>
-                        </div>
-                        <span className="text-2xl font-bold text-blue-500">78%</span>
-                    </div>
-
-                    <div className="h-16 mt-4">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={weeklyData}>
-                                <Bar dataKey="rate" fill="#3B82F6" radius={[4, 4, 0, 0]} />
-                            </BarChart>
-                        </ResponsiveContainer>
+                        <span className="text-2xl font-bold text-blue-500">
+                            {occupancyData?.occupancy_rate}%
+                        </span>
                     </div>
                 </div>
 
                 <div className="p-4 rounded-lg bg-gray-800/50">
                     <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                            <div className="p-2 rounded-lg bg-green-500/10">
-                                <DollarSign className="w-5 h-5 text-green-500" />
-                            </div>
-                            <span className="text-gray-400">Average Daily Rate</span>
-                        </div>
                         <div className="text-right">
-                            <div className="text-2xl font-bold text-green-500">$150</div>
-                            <div className="text-sm text-green-400">+5% from last month</div>
+                            <div className="text-2xl font-bold text-green-500">
+                                ${occupancyData?.adr}
+                            </div>
                         </div>
-                    </div>
-
-                    <div className="mt-2 w-full bg-gray-700 rounded-full h-2">
-                        <div
-                            className="bg-green-500 h-2 rounded-full transition-all duration-500"
-                            style={{ width: '75%' }}
-                        />
                     </div>
                 </div>
             </div>
@@ -425,12 +448,27 @@ export function ArrivalStats() {
     );
 }
 
-// Birthday List Component
+// Update BirthdayList to use real data
 export function BirthdayList() {
-    const birthdays: Birthday[] = [
-        { name: 'John Doe', date: '2023-10-15', room: 'Suite 301' },
-        { name: 'Jane Smith', date: '2023-10-20', room: 'Deluxe 102' },
-    ];
+    const [birthdays, setBirthdays] = useState<GuestBirthday[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const result = await api.getGuestBirthdays();
+                setBirthdays(result);
+            } catch (error) {
+                toast.error('Failed to load birthday data');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchData();
+    }, []);
+
+    if (loading) return <LoadingCard />;
 
     const formatDate = (dateStr: string) => {
         return new Date(dateStr).toLocaleDateString('en-US', {
@@ -440,80 +478,31 @@ export function BirthdayList() {
     };
 
     return (
-        <div className="bg-gray-900 p-6 rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 col-span-2">
-            <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-2">
-                    <Gift className="w-5 h-5 text-blue-500" />
-                    <h3 className="text-xl font-semibold text-gray-100">Upcoming Birthdays</h3>
-                </div>
-                <span className="text-sm text-gray-400">{birthdays.length} upcoming</span>
-            </div>
-
+        <div className="bg-gray-900 p-6 rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300">
+            {/* Your existing JSX with the new data */}
             <div className="overflow-x-auto">
                 <table className="w-full">
                     <thead>
                         <tr className="text-left text-gray-400 border-b border-gray-700">
                             <th className="pb-3 font-medium">Guest</th>
                             <th className="pb-3 font-medium">Date</th>
-                            <th className="pb-3 font-medium">Room</th>
                         </tr>
                     </thead>
                     <tbody>
                         {birthdays.map((guest, index) => (
-                            <tr
-                                key={index}
-                                className="border-b border-gray-800 hover:bg-gray-800/50 transition-colors duration-200"
-                            >
+                            <tr key={index} className="border-b border-gray-800">
                                 <td className="py-4">
                                     <span className="text-gray-100">{guest.name}</span>
                                 </td>
                                 <td className="py-4">
-                                    <div className="flex items-center gap-2">
-                                        <Calendar className="w-4 h-4 text-gray-400" />
-                                        <span className="text-gray-300">{formatDate(guest.date)}</span>
-                                    </div>
-                                </td>
-                                <td className="py-4">
-                                    <span className="px-2 py-1 text-sm rounded-full bg-gray-800 text-gray-300">
-                                        {guest.room}
+                                    <span className="text-gray-300">
+                                        {formatDate(guest.birthday)}
                                     </span>
                                 </td>
                             </tr>
                         ))}
                     </tbody>
                 </table>
-            </div>
-
-            {birthdays.length === 0 && (
-                <div className="text-center py-6">
-                    <span className="text-gray-400">No upcoming birthdays</span>
-                </div>
-            )}
-        </div>
-    );
-}
-// New Weather Widget Component
-export function WeatherWidget() {
-    const [isDay, setIsDay] = useState(true);
-    
-    useEffect(() => {
-        const interval = setInterval(() => {
-            setIsDay(prev => !prev);
-        }, 5000);
-        return () => clearInterval(interval);
-    }, []);
-
-    return (
-        <div className="bg-gradient-to-br from-blue-500 to-purple-600 p-6 rounded-xl shadow-lg">
-            <div className="flex items-center justify-between">
-                {isDay ? 
-                    <Sun className="w-8 h-8 text-yellow-300 animate-spin-slow" /> : 
-                    <Moon className="w-8 h-8 text-gray-200 animate-pulse" />
-                }
-                <div className="text-white">
-                    <h3 className="text-2xl font-bold">72°F</h3>
-                    <p className="text-sm">Sunny with clouds</p>
-                </div>
             </div>
         </div>
     );
@@ -558,9 +547,8 @@ export function GuestSatisfaction() {
                 {[...Array(maxStars)].map((_, index) => (
                     <Star
                         key={index}
-                        className={`w-8 h-8 cursor-pointer transition-colors ${
-                            index < rating ? 'text-yellow-400 animate-pulse' : 'text-gray-600'
-                        }`}
+                        className={`w-8 h-8 cursor-pointer transition-colors ${index < rating ? 'text-yellow-400 animate-pulse' : 'text-gray-600'
+                            }`}
                         onClick={() => setRating(index + 1)}
                     />
                 ))}
@@ -609,9 +597,8 @@ export function CoffeeBreakTimer() {
             </div>
             <button
                 onClick={handleClick}
-                className={`w-full py-2 rounded-lg ${
-                    isRunning ? 'bg-red-500 hover:bg-red-600' : 'bg-green-500 hover:bg-green-600'
-                } text-white transition-colors`}
+                className={`w-full py-2 rounded-lg ${isRunning ? 'bg-red-500 hover:bg-red-600' : 'bg-green-500 hover:bg-green-600'
+                    } text-white transition-colors`}
             >
                 {isRunning ? 'Pause Break' : timeLeft === 0 ? 'Start New Break' : 'Start Break'}
             </button>
@@ -622,9 +609,6 @@ export function CoffeeBreakTimer() {
 // Filter Dropdown Component
 export function FilterDropdown() {
     const filters = ['All', 'Members', 'General Guests', 'Canceled'];
-
-    
-
     return (
         <Menu as="div" className="relative">
             <Menu.Button className="bg-gray p-2 rounded-lg shadow-sm border border-gray-200">
@@ -671,10 +655,10 @@ const components = {
     ArrivalStats,
     BirthdayList,
     FilterDropdown,
-    WeatherWidget,
     NotificationBell,
     GuestSatisfaction,
     CoffeeBreakTimer,
+    FullScreenChartModal, 
 };
 
 export default components;
