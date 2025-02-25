@@ -28,7 +28,7 @@ export class GeminiService {
    * Analyze chart data using Gemini API
    */
   async analyzeChartData(
-    chartType: 'memberVsGeneral' | 'ageGroups',
+    chartType: 'memberVsGeneral' | 'ageGroups' | 'canceledBookings' | 'occupancy',
     data: ChartData[],
     title: string
   ): Promise<GeminiAnalysisResponse> {
@@ -38,34 +38,59 @@ export class GeminiService {
     try {
       // Prepare the prompt based on chart type
       let prompt = '';
-      
-      if (chartType === 'memberVsGeneral') {
-        const memberPercentage = ((data[0].value / total) * 100).toFixed(1);
-        const generalPercentage = ((data[1].value / total) * 100).toFixed(1);
-        
-        prompt = `Analyze hotel guest data where ${memberPercentage}% are members and ${generalPercentage}% are general guests. 
-        Provide the following:
-        1. Key Finding: A clear statement about the member vs general guest ratio
-        2. Insight: What this distribution suggests about the hotel's customer base
-        3. Recommendation: A specific action the hotel could take based on this data
-        4. Benchmark: How this compares to industry averages (around 55% members is average)
-        Format the response as JSON with keyFinding, insight, recommendation, and additionalInfo fields.`;
-      } else {
-        // For age groups analysis
-        const ageDistribution = data.map(item => 
-          `${item.name}: ${((item.value / total) * 100).toFixed(1)}%`
-        ).join(', ');
-        
-        prompt = `Analyze hotel guest age demographic data with this distribution: ${ageDistribution}. 
-        Provide the following:
-        1. Key Finding: Identify the largest demographic group and its percentage
-        2. Insight: What this age distribution suggests about the hotel's appeal
-        3. Recommendation: A specific action the hotel could take based on this data
-        4. Trend Analysis: What the current age distribution suggests about the hotel's market
-        Format the response as JSON with keyFinding, insight, recommendation, and additionalInfo fields.`;
+
+      switch (chartType) {
+        case 'memberVsGeneral': {
+          const memberPercentage = ((data[0].value / total) * 100).toFixed(1);
+          const generalPercentage = ((data[1].value / total) * 100).toFixed(1);
+          prompt = `Analyze hotel guest data where ${memberPercentage}% are members and ${generalPercentage}% are general guests. 
+          Provide the following:
+          1. Key Finding: A clear statement about the member vs general guest ratio
+          2. Insight: What this distribution suggests about the hotel's customer base
+          3. Recommendation: A specific action the hotel could take based on this data
+          4. Benchmark: How this compares to industry averages (around 55% members is average)
+          Format the response as JSON with keyFinding, insight, recommendation, and additionalInfo fields.`;
+          break;
+        }
+        case 'ageGroups': {
+          const ageDistribution = data.map(item => 
+            `${item.name}: ${((item.value / total) * 100).toFixed(1)}%`
+          ).join(', ');
+          prompt = `Analyze hotel guest age demographic data with this distribution: ${ageDistribution}. 
+          Provide the following:
+          1. Key Finding: Identify the largest demographic group and its percentage
+          2. Insight: What this age distribution suggests about the hotel's appeal
+          3. Recommendation: A specific action the hotel could take based on this data
+          4. Trend Analysis: What the current age distribution suggests about the hotel's market
+          Format the response as JSON with keyFinding, insight, recommendation, and additionalInfo fields.`;
+          break;
+        }
+        case 'canceledBookings': {
+          const canceledPercentage = ((data.find(item => item.name === 'Canceled')?.value || 0) / total) * 100;
+          prompt = `Analyze hotel booking cancellation data where ${canceledPercentage.toFixed(1)}% of bookings are canceled. 
+          Provide the following:
+          1. Key Finding: A statement about the cancellation rate
+          2. Insight: What this rate suggests about booking stability
+          3. Recommendation: A specific action to reduce cancellations if needed
+          4. Benchmark: How this compares to industry averages (around 10-15% is typical)
+          Format the response as JSON with keyFinding, insight, recommendation, and additionalInfo fields.`;
+          break;
+        }
+        case 'occupancy': {
+          const occupancyPercentage = ((data.find(item => item.name === 'Occupied')?.value || 0) / total) * 100;
+          prompt = `Analyze hotel occupancy data where ${occupancyPercentage.toFixed(1)}% of rooms are occupied. 
+          Provide the following:
+          1. Key Finding: A statement about the occupancy rate
+          2. Insight: What this rate suggests about demand
+          3. Recommendation: A specific action to optimize occupancy
+          4. Benchmark: How this compares to industry averages (around 65-70% is typical)
+          Format the response as JSON with keyFinding, insight, recommendation, and additionalInfo fields.`;
+          break;
+        }
       }
 
-      // Make the API request
+      // Uncomment below for actual API integration
+      
       const response = await fetch(`${this.baseUrl}/models/gemini-pro:generateContent?key=${this.apiKey}`, {
         method: 'POST',
         headers: {
@@ -85,86 +110,49 @@ export class GeminiService {
       }
 
       const responseData = await response.json();
-      
-      // Parse the response text as JSON
-      // The actual text is in the response structure - this might need adjustment based on actual Gemini API response format
       const analysisText = responseData.candidates[0].content.parts[0].text;
       let analysisJson: GeminiAnalysisResponse;
-      
+
       try {
-        // Try to parse the JSON response
         analysisJson = JSON.parse(analysisText);
       } catch (error) {
-        // If the response isn't valid JSON, extract information using regex or provide fallback
         console.error("Failed to parse Gemini response as JSON", error);
         analysisJson = this.extractAnalysisFromText(analysisText, chartType);
       }
 
       return analysisJson;
+      
     } catch (error) {
       console.error("Error analyzing data with Gemini:", error);
-      
-      // Return fallback analysis if API fails
-      return this.getFallbackAnalysis(chartType, data, total);
+      return {
+        keyFinding: "Unable to analyze data.",
+        insight: "An error occurred while processing the data.",
+        recommendation: "Please try again later.",
+        additionalInfo: "Error: " + (error instanceof Error ? error.message : 'Unknown error')
+      };
     }
   }
+
+  
 
   /**
    * Fallback method to extract structured data from text response if JSON parsing fails
    */
-  private extractAnalysisFromText(text: string, chartType: 'memberVsGeneral' | 'ageGroups'): GeminiAnalysisResponse {
-    // Simple extraction using regex patterns
+  private extractAnalysisFromText(text: string, chartType: 'memberVsGeneral' | 'ageGroups' | 'canceledBookings' | 'occupancy'): GeminiAnalysisResponse {
     const keyFindingMatch = text.match(/Key Finding:?\s*(.*?)(?:\n|$)/i);
     const insightMatch = text.match(/Insight:?\s*(.*?)(?:\n|$)/i);
     const recommendationMatch = text.match(/Recommendation:?\s*(.*?)(?:\n|$)/i);
-    
-    // The fourth field depends on chart type
-    const additionalMatch = chartType === 'memberVsGeneral' 
-      ? text.match(/Benchmark:?\s*(.*?)(?:\n|$)/i)
-      : text.match(/Trend Analysis:?\s*(.*?)(?:\n|$)/i);
+    const additionalMatch = text.match(/(Benchmark|Trend Analysis):?\s*(.*?)(?:\n|$)/i);
 
     return {
       keyFinding: keyFindingMatch ? keyFindingMatch[1].trim() : "Unable to extract key finding.",
       insight: insightMatch ? insightMatch[1].trim() : "Unable to extract insight.",
       recommendation: recommendationMatch ? recommendationMatch[1].trim() : "Unable to extract recommendation.",
-      additionalInfo: additionalMatch ? additionalMatch[1].trim() : "Unable to extract additional information."
+      additionalInfo: additionalMatch ? additionalMatch[2].trim() : "Unable to extract additional information."
     };
   }
 
-  /**
-   * Provide fallback analysis if the API call fails
-   */
-  private getFallbackAnalysis(
-    chartType: 'memberVsGeneral' | 'ageGroups', 
-    data: ChartData[],
-    total: number
-  ): GeminiAnalysisResponse {
-    if (chartType === 'memberVsGeneral') {
-      const memberPercentage = ((data[0].value / total) * 100).toFixed(1);
-      return {
-        keyFinding: `Your property has ${memberPercentage}% member guests compared to ${(100 - parseFloat(memberPercentage)).toFixed(1)}% general guests.`,
-        insight: parseFloat(memberPercentage) > 60 
-          ? "Your high member percentage indicates strong loyalty and repeat business." 
-          : "There's an opportunity to convert more general guests into members.",
-        recommendation: parseFloat(memberPercentage) > 55
-          ? "Focus on member retention strategies and upselling premium services to your loyal customer base."
-          : "Implement a targeted marketing campaign to increase membership sign-ups during check-in.",
-        additionalInfo: `The industry average for member bookings is approximately 55%. Your property is ${parseFloat(memberPercentage) > 55 ? 'above' : 'below'} this benchmark.`
-      };
-    } else {
-      // Age groups analysis
-      const sortedData = [...data].sort((a, b) => b.value - a.value);
-      const youngestGroup = sortedData[0];
-      const youngGroupPercentage = ((youngestGroup.value / total) * 100).toFixed(1);
-      
-      return {
-        keyFinding: `Your largest guest demographic is the ${youngestGroup.name} group at ${youngGroupPercentage}% of total guests.`,
-        insight: "Your property's age distribution suggests specific appeal to certain demographics.",
-        recommendation: `Focus marketing efforts on the dominant ${youngestGroup.name} demographic to maximize occupancy.`,
-        additionalInfo: `The current age distribution suggests opportunities for tailored services for the ${youngestGroup.name} demographic.`
-      };
-    }
-  }
+  
 }
 
 // Create and export a singleton instance

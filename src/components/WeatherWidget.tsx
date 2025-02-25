@@ -1,6 +1,5 @@
-// WeatherWidget.tsx
 import React, { useState, useEffect } from 'react';
-import { Sun, Moon, RefreshCw, CloudRain, Cloud, CloudSnow, CloudLightning, Wind } from 'lucide-react';
+import { Sun, Moon, CloudRain, Cloud, CloudSnow, CloudLightning, Wind } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export function WeatherWidget() {
@@ -17,7 +16,7 @@ export function WeatherWidget() {
     // Replace with your OpenWeatherMap API key
     const apiKey = '907f56534ede1e46b4c3a0830f7747b2';
     const city = 'Bangkok'; // Replace with the desired city
-    const apiUrl = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}&units=metric`; // Use metric for Celsius
+    const apiUrl = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}&units=metric`;
 
     const getWeatherIcon = (condition: string, isDay: boolean) => {
         const lowerCondition = condition.toLowerCase();
@@ -49,10 +48,9 @@ export function WeatherWidget() {
             }
             const data = await response.json();
 
-            // Extract relevant weather information
             const temperature = Math.round(data.main.temp);
             const condition = data.weather[0].description;
-            const isDay = data.weather[0].icon.includes('d'); // 'd' indicates day, 'n' indicates night
+            const isDay = data.weather[0].icon.includes('d');
             const humidity = data.main.humidity;
             const windSpeed = data.wind.speed;
 
@@ -73,21 +71,10 @@ export function WeatherWidget() {
     };
 
     useEffect(() => {
-        // Fetch weather data immediately when the component mounts
         fetchWeatherData();
-
-        // Set up a polling interval to fetch weather data every 5 minutes (300,000 milliseconds)
-        const interval = setInterval(fetchWeatherData, 100000); // 5 minutes
-
-        // Clean up the interval when the component unmounts
+        const interval = setInterval(fetchWeatherData, 300000);
         return () => clearInterval(interval);
     }, []);
-
-    const handleRefresh = () => {
-        setLoading(true);
-        fetchWeatherData();
-        toast.success('Weather data refreshed!');
-    };
 
     if (loading) {
         return (
@@ -114,44 +101,33 @@ export function WeatherWidget() {
         );
     }
 
-    // Calculate time-based gradient (morning, day, evening, night)
     const getTimeBasedGradient = () => {
         const hour = new Date().getHours();
-        
-        if (hour >= 5 && hour < 10) { // Morning
-            return "from-orange-400 to-blue-500";
-        } else if (hour >= 10 && hour < 17) { // Day
-            return "from-blue-400 to-blue-600";
-        } else if (hour >= 17 && hour < 20) { // Evening
-            return "from-orange-500 to-purple-700";
-        } else { // Night
-            return "from-blue-900 to-purple-900";
-        }
+        if (hour >= 5 && hour < 10) return "from-orange-400 to-blue-500";
+        else if (hour >= 10 && hour < 17) return "from-blue-400 to-blue-600";
+        else if (hour >= 17 && hour < 20) return "from-orange-500 to-purple-700";
+        else return "from-blue-900 to-purple-900";
     };
 
     return (
         <div className={`bg-gradient-to-br ${getTimeBasedGradient()} p-3 md:p-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 w-full max-w-xs`}>
             <div className="flex flex-col space-y-2">
                 <div className="flex items-center justify-between">
-                    <span className="text-xs md:text-sm font-medium text-white opacity-90">{weatherData.city}</span>
-                    
+                    <span className="text-sm md:text-base font-medium text-white opacity-90">{weatherData.city}</span>
                 </div>
-                
                 <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
                         {getWeatherIcon(weatherData.condition, weatherData.isDay)}
                         <div>
-                            <h3 className="text-2xl md:text-3xl font-bold text-white">
+                            <h3 className="text-2xl md:text-3xl lg:text-4xl font-bold text-white">
                                 {weatherData.temperature}°C
                             </h3>
-                            <p className="text-xs md:text-sm capitalize text-white opacity-90">
+                            <p className="text-sm md:text-base capitalize text-white opacity-90">
                                 {weatherData.condition}
                             </p>
                         </div>
                     </div>
                 </div>
-                
-                
             </div>
         </div>
     );

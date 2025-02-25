@@ -1,25 +1,14 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import { X, FileText, BarChart, Download, RotateCcw, BrainCircuit } from 'lucide-react';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart as RechartsBarChart, Bar, XAxis, YAxis, CartesianGrid, Legend } from 'recharts';
-
-// Define types for our charts
-interface MemberVsGeneralData {
-  name: string;
-  value: number;
-}
-
-interface AgeGroupData {
-  name: string;
-  value: number;
-  additionalContext?: string;
-}
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
+import { geminiService, ChartData, GeminiAnalysisResponse } from './GeminiService';
 
 interface FullScreenChartModalProps {
   isOpen: boolean;
   onClose: () => void;
-  chartType: 'memberVsGeneral' | 'ageGroups';
-  data: MemberVsGeneralData[] | AgeGroupData[];
+  chartType: 'memberVsGeneral' | 'ageGroups' | 'canceledBookings' | 'occupancy';
+  data: ChartData[];
   title: string;
 }
 
@@ -27,65 +16,76 @@ export function FullScreenChartModal({ isOpen, onClose, chartType, data, title }
   const [showAnalysis, setShowAnalysis] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisCompleted, setAnalysisCompleted] = useState(false);
+  const [analysis, setAnalysis] = useState<GeminiAnalysisResponse | null>(null);
   const [activeTab, setActiveTab] = useState<'chart' | 'data'>('chart');
   const [chartHeight, setChartHeight] = useState(400);
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
-    // Handle responsive sizing
     const handleResize = () => {
       setIsMobile(window.innerWidth < 768);
-      
-      // Adjust chart height based on viewport and analysis visibility
       const baseHeight = window.innerWidth < 768 ? 300 : 400;
       setChartHeight(showAnalysis ? baseHeight * 0.6 : baseHeight);
     };
 
-    handleResize(); // Initial call
+    handleResize();
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, [showAnalysis]);
 
-  // Recalculate chart height when analysis state changes
-  useEffect(() => {
-    const baseHeight = window.innerWidth < 768 ? 300 : 400;
-    setChartHeight(showAnalysis ? baseHeight * 0.6 : baseHeight);
-  }, [showAnalysis]);
-
   if (!isOpen) return null;
 
-  // Colors for the charts
-  const MEMBER_COLORS = ['#3B82F6', '#10B981'];
-  const AGE_COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444'];
-
-  // Calculate the total for percentages
-  const total = data.reduce((sum, item) => sum + item.value, 0);
-
-  // Handle analyze with AI action
-  const handleAnalyzeWithAI = () => {
-    setIsAnalyzing(true);
-    setShowAnalysis(true);
-    
-    // Simulate AI analysis with a timeout
-    setTimeout(() => {
-      setIsAnalyzing(false);
-      setAnalysisCompleted(true);
-    }, 2000);
+  const getColors = (chartType: string) => {
+    switch (chartType) {
+      case 'memberVsGeneral':
+        return ['#3B82F6', '#10B981'];
+      case 'ageGroups':
+        return ['#3B82F6', '#10B981', '#F59E0B', '#EF4444'];
+      case 'canceledBookings':
+        return ['#10B981', '#EF4444']; // Green for confirmed, Red for canceled
+      case 'occupancy':
+        return ['#3B82F6', '#F59E0B']; // Blue for occupied, Orange for available
+      default:
+        return ['#3B82F6', '#10B981'];
+    }
   };
 
-  // Reset the analysis state
+  const COLORS = getColors(chartType);
+  const total = data.reduce((sum, item) => sum + item.value, 0);
+
+  const handleAnalyzeWithAI = async () => {
+    setIsAnalyzing(true);
+    setShowAnalysis(true);
+
+    try {
+      const analysisResult = await geminiService.analyzeChartData(chartType, data, title);
+      setAnalysis(analysisResult);
+      setIsAnalyzing(false);
+      setAnalysisCompleted(true);
+    } catch (error) {
+      console.error('Failed to fetch analysis:', error);
+      setIsAnalyzing(false);
+      setAnalysisCompleted(true);
+      setAnalysis({
+        keyFinding: "Analysis failed.",
+        insight: "Unable to retrieve insights due to an error.",
+        recommendation: "Please try again later.",
+        additionalInfo: "N/A"
+      });
+    }
+  };
+
   const handleResetAnalysis = () => {
     setShowAnalysis(false);
     setAnalysisCompleted(false);
+    setAnalysis(null);
   };
 
-  // Mock function for export data
   const handleExportData = () => {
     alert('Exporting data...');
     // In a real implementation, this would generate and download a CSV/Excel file
   };
 
-  // AI analysis content based on chart type
   const renderAnalysisContent = () => {
     if (isAnalyzing) {
       return (
@@ -96,88 +96,35 @@ export function FullScreenChartModal({ isOpen, onClose, chartType, data, title }
       );
     }
 
-    if (chartType === 'memberVsGeneral') {
-      return (
-        <div className="p-3 md:p-6 bg-gray-800 rounded-lg text-sm md:text-base">
-          <h3 className="text-lg md:text-xl text-blue-400 mb-2 md:mb-4">AI Analysis: Member vs General Guests</h3>
-          <div className="space-y-2 md:space-y-4 text-gray-300">
-            <p>
-              <span className="font-semibold">Key Finding:</span> Your property has a {data[0].value > data[1].value ? 'higher' : 'lower'} percentage 
-              of members ({data[0].value}%) compared to general guests ({data[1].value}%).
-            </p>
-            <p>
-              <span className="font-semibold">Insight:</span> {data[0].value > 60 ? 
-                'Your high member percentage indicates strong loyalty and repeat business. Consider implementing more exclusive member benefits to further leverage this advantage.' : 
-                'There\'s an opportunity to convert more general guests into members. Consider enhancing your loyalty program benefits or offering special promotions for first-time members.'}
-            </p>
-            <p>
-              <span className="font-semibold">Recommendation:</span> {data[0].value > data[1].value ? 
-                'Focus on member retention strategies and upselling premium services to your loyal customer base.' : 
-                'Implement a targeted marketing campaign to increase membership sign-ups during check-in.'}
-            </p>
-            <p>
-              <span className="font-semibold">Benchmark:</span> The industry average for member bookings is approximately 55%. Your property is 
-              {data[0].value > 55 ? ' above ' : ' below '} this benchmark.
-            </p>
-          </div>
+    if (!analysis) return null;
+
+    return (
+      <div className="p-3 md:p-6 bg-gray-800 rounded-lg text-sm md:text-base">
+        <h3 className="text-lg md:text-xl text-blue-400 mb-2 md:mb-4">AI Analysis: {title}</h3>
+        <div className="space-y-2 md:space-y-4 text-gray-300">
+          <p><span className="font-semibold">Key Finding:</span> {analysis.keyFinding}</p>
+          <p><span className="font-semibold">Insight:</span> {analysis.insight}</p>
+          <p><span className="font-semibold">Recommendation:</span> {analysis.recommendation}</p>
+          <p><span className="font-semibold">{chartType === 'ageGroups' ? 'Trend Analysis' : 'Benchmark'}:</span> {analysis.additionalInfo}</p>
         </div>
-      );
-    } else {
-      // Age groups analysis
-      const youngestGroup = [...data].sort((a, b) => b.value - a.value)[0];
-      const oldestGroup = data.find(group => group.name === 'Elder');
-      const adultGroups = data.filter(group => group.name === 'Adult' || group.name === 'Middle Age');
-      const adultTotal = adultGroups.reduce((sum, item) => sum + item.value, 0);
-      
-      return (
-        <div className="p-3 md:p-6 bg-gray-800 rounded-lg text-sm md:text-base">
-          <h3 className="text-lg md:text-xl text-blue-400 mb-2 md:mb-4">AI Analysis: Guest Age Demographics</h3>
-          <div className="space-y-2 md:space-y-4 text-gray-300">
-            <p>
-              <span className="font-semibold">Key Finding:</span> Your largest guest demographic is the {youngestGroup.name} group 
-              at {((youngestGroup.value / total) * 100).toFixed(1)}% of total guests.
-            </p>
-            <p>
-              <span className="font-semibold">Insight:</span> {adultTotal > total * 0.6 ? 
-                'Your property appeals strongly to working-age adults. Consider business amenities and services to enhance their stay.' : 
-                'Your property has a diverse age distribution, suggesting family-friendly appeal.'}
-            </p>
-            <p>
-              <span className="font-semibold">Recommendation:</span> {oldestGroup && oldestGroup.value > total * 0.2 ? 
-                'With a significant elder demographic, consider enhancing accessibility features and offering services tailored to seniors.' : 
-                youngestGroup.name === 'Child' ? 
-                'With many families visiting, consider expanding children\'s activities and family packages.' :
-                'Focus marketing efforts on the dominant ' + youngestGroup.name + ' demographic to maximize occupancy.'}
-            </p>
-            <p>
-              <span className="font-semibold">Trend Analysis:</span> The current age distribution suggests 
-              {youngestGroup.name === 'Adult' || youngestGroup.name === 'Middle Age' ? 
-                ' business and leisure travel is your primary market.' : 
-                youngestGroup.name === 'Child' ? 
-                ' family vacations are a key driver for your bookings.' : 
-                ' you have a unique opportunity to specialize in senior-friendly accommodations.'}
-            </p>
-          </div>
-        </div>
-      );
-    }
+      </div>
+    );
   };
 
-  // Custom label component for pie chart that is responsive
   const renderCustomizedLabel = ({ name, value, cx, cy, midAngle, innerRadius, outerRadius, percent, index }: { name: string; value: number; cx: number; cy: number; midAngle: number; innerRadius: number; outerRadius: number; percent: number; index: number }) => {
-    if (isMobile) return null; // Skip labels on mobile
-    
+    if (isMobile) return null;
+
     const RADIAN = Math.PI / 180;
     const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
     const x = cx + radius * Math.cos(-midAngle * RADIAN);
     const y = cy + radius * Math.sin(-midAngle * RADIAN);
-    
+
     return (
-      <text 
-        x={x} 
-        y={y} 
-        fill="white" 
-        textAnchor={x > cx ? 'start' : 'end'} 
+      <text
+        x={x}
+        y={y}
+        fill="white"
+        textAnchor={x > cx ? 'start' : 'end'}
         dominantBaseline="central"
         fontSize="12"
       >
@@ -193,14 +140,14 @@ export function FullScreenChartModal({ isOpen, onClose, chartType, data, title }
         <div className="p-3 md:p-4 flex items-center justify-between border-b border-gray-800">
           <h2 className="text-lg md:text-xl font-bold text-gray-100 truncate">{title}</h2>
           <div className="flex items-center gap-2 md:gap-4">
-            <button 
+            <button
               onClick={handleExportData}
               className="text-gray-400 hover:text-gray-200 p-1 md:p-2 rounded-full transition-colors"
               title="Export data"
             >
               <Download size={isMobile ? 18 : 20} />
             </button>
-            <button 
+            <button
               onClick={onClose}
               className="text-gray-400 hover:text-gray-200 p-1 md:p-2 rounded-full transition-colors"
               title="Close"
@@ -209,10 +156,10 @@ export function FullScreenChartModal({ isOpen, onClose, chartType, data, title }
             </button>
           </div>
         </div>
-        
+
         {/* Tab Navigation */}
         <div className="flex border-b border-gray-800">
-          <button 
+          <button
             className={`px-3 md:px-4 py-2 font-medium text-sm md:text-base ${activeTab === 'chart' ? 'text-blue-400 border-b-2 border-blue-400' : 'text-gray-400'}`}
             onClick={() => setActiveTab('chart')}
           >
@@ -221,7 +168,7 @@ export function FullScreenChartModal({ isOpen, onClose, chartType, data, title }
               <span>Chart</span>
             </div>
           </button>
-          <button 
+          <button
             className={`px-3 md:px-4 py-2 font-medium text-sm md:text-base ${activeTab === 'data' ? 'text-blue-400 border-b-2 border-blue-400' : 'text-gray-400'}`}
             onClick={() => setActiveTab('data')}
           >
@@ -231,99 +178,55 @@ export function FullScreenChartModal({ isOpen, onClose, chartType, data, title }
             </div>
           </button>
         </div>
-        
+
         <div className="flex-1 overflow-auto p-3 md:p-6">
           {activeTab === 'chart' && (
             <div className="flex flex-col h-full">
-              {/* Chart display */}
               <div className={`flex-1 ${showAnalysis ? 'h-1/2' : 'h-full'}`}>
                 <ResponsiveContainer width="100%" height={chartHeight}>
-                  {chartType === 'memberVsGeneral' ? (
-                    <PieChart>
-                      <Pie
-                        data={data}
-                        dataKey="value"
-                        cx="50%"
-                        cy="50%"
-                        outerRadius={isMobile ? 100 : 160}
-                        innerRadius={isMobile ? 60 : 100}
-                        paddingAngle={5}
-                        stroke="none"
-                        label={isMobile ? undefined : renderCustomizedLabel}
-                        labelLine={false}
-                      >
-                        {data.map((_, index) => (
-                          <Cell
-                            key={`cell-${index}`}
-                            fill={MEMBER_COLORS[index % MEMBER_COLORS.length]}
-                            className="hover:opacity-80 transition-opacity duration-300"
-                          />
-                        ))}
-                      </Pie>
-                      <Tooltip
-                        contentStyle={{
-                          backgroundColor: '#1F2937',
-                          border: 'none',
-                          borderRadius: '0.5rem',
-                          padding: '0.5rem',
-                        }}
-                        itemStyle={{ color: '#E5E7EB' }}
-                      />
-                      <Legend 
-                        verticalAlign="bottom" 
-                        height={36} 
-                        iconSize={isMobile ? 8 : 10}
-                        formatter={(value, entry) => (
-                          <span className="text-xs md:text-sm text-gray-300">{value}</span>
-                        )}
-                      />
-                    </PieChart>
-                  ) : (
-                    <PieChart>
-                      <Pie
-                        data={data}
-                        dataKey="value"
-                        cx="50%"
-                        cy="50%"
-                        outerRadius={isMobile ? 100 : 160}
-                        innerRadius={isMobile ? 60 : 100}
-                        paddingAngle={3}
-                        stroke="none"
-                        label={isMobile ? undefined : renderCustomizedLabel}
-                        labelLine={false}
-                      >
-                        {data.map((_, index) => (
-                          <Cell
-                            key={`cell-${index}`}
-                            fill={AGE_COLORS[index % AGE_COLORS.length]}
-                            className="hover:opacity-80 transition-opacity duration-300"
-                          />
-                        ))}
-                      </Pie>
-                      <Tooltip
-                        contentStyle={{
-                          backgroundColor: '#1F2937',
-                          border: 'none',
-                          borderRadius: '0.5rem',
-                          padding: '0.5rem',
-                        }}
-                        itemStyle={{ color: '#E5E7EB' }}
-                        formatter={(value: number) => [`${value} guests (${((value / total) * 100).toFixed(1)}%)`, '']}
-                      />
-                      <Legend 
-                        verticalAlign="bottom" 
-                        height={36} 
-                        iconSize={isMobile ? 8 : 10}
-                        formatter={(value, entry) => (
-                          <span className="text-xs md:text-sm text-gray-300">{value}</span>
-                        )}
-                      />
-                    </PieChart>
-                  )}
+                  <PieChart>
+                    <Pie
+                      data={data}
+                      dataKey="value"
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={isMobile ? 100 : 160}
+                      innerRadius={isMobile ? 60 : 100}
+                      paddingAngle={chartType === 'ageGroups' ? 3 : 5}
+                      stroke="none"
+                      label={isMobile ? undefined : renderCustomizedLabel}
+                      labelLine={false}
+                    >
+                      {data.map((_, index) => (
+                        <Cell
+                          key={`cell-${index}`}
+                          fill={COLORS[index % COLORS.length]}
+                          className="hover:opacity-80 transition-opacity duration-300"
+                        />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: '#1F2937',
+                        border: 'none',
+                        borderRadius: '0.5rem',
+                        padding: '0.5rem',
+                      }}
+                      itemStyle={{ color: '#E5E7EB' }}
+                      formatter={(value: number) => chartType === 'memberVsGeneral' ? [`${value}`, ''] : [`${value} (${((value / total) * 100).toFixed(1)}%)`, '']}
+                    />
+                    <Legend
+                      verticalAlign="bottom"
+                      height={36}
+                      iconSize={isMobile ? 8 : 10}
+                      formatter={(value, entry) => (
+                        <span className="text-xs md:text-sm text-gray-300">{value}</span>
+                      )}
+                    />
+                  </PieChart>
                 </ResponsiveContainer>
               </div>
-              
-              {/* AI Analysis button or section */}
+
               {!showAnalysis ? (
                 <div className="flex justify-center mt-3 md:mt-6">
                   <button
@@ -356,7 +259,7 @@ export function FullScreenChartModal({ isOpen, onClose, chartType, data, title }
               )}
             </div>
           )}
-          
+
           {activeTab === 'data' && (
             <div className="overflow-x-auto -mx-3 md:-mx-6">
               <table className="w-full text-gray-300 text-sm md:text-base">
@@ -374,13 +277,9 @@ export function FullScreenChartModal({ isOpen, onClose, chartType, data, title }
                   {data.map((item, index) => (
                     <tr key={index} className="border-b border-gray-800">
                       <td className="py-2 md:py-3 px-3 md:px-4 flex items-center gap-2">
-                        <div 
-                          className="w-3 h-3 rounded-full" 
-                          style={{ 
-                            backgroundColor: chartType === 'memberVsGeneral' 
-                              ? MEMBER_COLORS[index % MEMBER_COLORS.length]
-                              : AGE_COLORS[index % AGE_COLORS.length]
-                          }}
+                        <div
+                          className="w-3 h-3 rounded-full"
+                          style={{ backgroundColor: COLORS[index % COLORS.length] }}
                         ></div>
                         {item.name}
                       </td>
@@ -388,7 +287,7 @@ export function FullScreenChartModal({ isOpen, onClose, chartType, data, title }
                       <td className="text-right py-2 md:py-3 px-3 md:px-4">{((item.value / total) * 100).toFixed(1)}%</td>
                       {chartType === 'ageGroups' && (
                         <td className="text-left py-2 md:py-3 px-3 md:px-4 text-gray-400 text-xs md:text-sm">
-                          {(item as AgeGroupData).additionalContext || 'No additional data'}
+                          {item.additionalContext || 'No additional data'}
                         </td>
                       )}
                     </tr>
@@ -406,8 +305,7 @@ export function FullScreenChartModal({ isOpen, onClose, chartType, data, title }
             </div>
           )}
         </div>
-        
-        {/* Footer */}
+
         <div className="p-3 md:p-4 border-t border-gray-800 flex flex-col md:flex-row justify-between text-xs md:text-sm text-gray-400">
           <div className="mb-1 md:mb-0">Last updated: {new Date().toLocaleDateString()}</div>
           <div>Data source: Hotel Management System</div>
