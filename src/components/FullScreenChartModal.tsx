@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, FileText, BarChart, Download, RotateCcw, BrainCircuit } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart as RechartsBarChart, Bar, XAxis, YAxis, CartesianGrid, Legend } from 'recharts';
 
@@ -28,6 +28,29 @@ export function FullScreenChartModal({ isOpen, onClose, chartType, data, title }
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisCompleted, setAnalysisCompleted] = useState(false);
   const [activeTab, setActiveTab] = useState<'chart' | 'data'>('chart');
+  const [chartHeight, setChartHeight] = useState(400);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    // Handle responsive sizing
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+      
+      // Adjust chart height based on viewport and analysis visibility
+      const baseHeight = window.innerWidth < 768 ? 300 : 400;
+      setChartHeight(showAnalysis ? baseHeight * 0.6 : baseHeight);
+    };
+
+    handleResize(); // Initial call
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [showAnalysis]);
+
+  // Recalculate chart height when analysis state changes
+  useEffect(() => {
+    const baseHeight = window.innerWidth < 768 ? 300 : 400;
+    setChartHeight(showAnalysis ? baseHeight * 0.6 : baseHeight);
+  }, [showAnalysis]);
 
   if (!isOpen) return null;
 
@@ -66,18 +89,18 @@ export function FullScreenChartModal({ isOpen, onClose, chartType, data, title }
   const renderAnalysisContent = () => {
     if (isAnalyzing) {
       return (
-        <div className="flex flex-col items-center justify-center p-8">
-          <div className="w-16 h-16 border-t-4 border-blue-500 rounded-full animate-spin mb-4"></div>
-          <p className="text-gray-300">AI is analyzing your data...</p>
+        <div className="flex flex-col items-center justify-center p-4 md:p-8">
+          <div className="w-12 h-12 md:w-16 md:h-16 border-t-4 border-blue-500 rounded-full animate-spin mb-4"></div>
+          <p className="text-gray-300 text-sm md:text-base">AI is analyzing your data...</p>
         </div>
       );
     }
 
     if (chartType === 'memberVsGeneral') {
       return (
-        <div className="p-6 bg-gray-800 rounded-lg">
-          <h3 className="text-xl text-blue-400 mb-4">AI Analysis: Member vs General Guests</h3>
-          <div className="space-y-4 text-gray-300">
+        <div className="p-3 md:p-6 bg-gray-800 rounded-lg text-sm md:text-base">
+          <h3 className="text-lg md:text-xl text-blue-400 mb-2 md:mb-4">AI Analysis: Member vs General Guests</h3>
+          <div className="space-y-2 md:space-y-4 text-gray-300">
             <p>
               <span className="font-semibold">Key Finding:</span> Your property has a {data[0].value > data[1].value ? 'higher' : 'lower'} percentage 
               of members ({data[0].value}%) compared to general guests ({data[1].value}%).
@@ -107,9 +130,9 @@ export function FullScreenChartModal({ isOpen, onClose, chartType, data, title }
       const adultTotal = adultGroups.reduce((sum, item) => sum + item.value, 0);
       
       return (
-        <div className="p-6 bg-gray-800 rounded-lg">
-          <h3 className="text-xl text-blue-400 mb-4">AI Analysis: Guest Age Demographics</h3>
-          <div className="space-y-4 text-gray-300">
+        <div className="p-3 md:p-6 bg-gray-800 rounded-lg text-sm md:text-base">
+          <h3 className="text-lg md:text-xl text-blue-400 mb-2 md:mb-4">AI Analysis: Guest Age Demographics</h3>
+          <div className="space-y-2 md:space-y-4 text-gray-300">
             <p>
               <span className="font-semibold">Key Finding:</span> Your largest guest demographic is the {youngestGroup.name} group 
               at {((youngestGroup.value / total) * 100).toFixed(1)}% of total guests.
@@ -140,26 +163,49 @@ export function FullScreenChartModal({ isOpen, onClose, chartType, data, title }
     }
   };
 
+  // Custom label component for pie chart that is responsive
+  const renderCustomizedLabel = ({ name, value, cx, cy, midAngle, innerRadius, outerRadius, percent, index }: { name: string; value: number; cx: number; cy: number; midAngle: number; innerRadius: number; outerRadius: number; percent: number; index: number }) => {
+    if (isMobile) return null; // Skip labels on mobile
+    
+    const RADIAN = Math.PI / 180;
+    const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+    const x = cx + radius * Math.cos(-midAngle * RADIAN);
+    const y = cy + radius * Math.sin(-midAngle * RADIAN);
+    
+    return (
+      <text 
+        x={x} 
+        y={y} 
+        fill="white" 
+        textAnchor={x > cx ? 'start' : 'end'} 
+        dominantBaseline="central"
+        fontSize="12"
+      >
+        {`${name}: ${chartType === 'memberVsGeneral' ? value : ((value / total) * 100).toFixed(1)}%`}
+      </text>
+    );
+  };
+
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
-      <div className="bg-gray-900 rounded-xl shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col">
+    <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-2 md:p-4">
+      <div className="bg-gray-900 rounded-xl shadow-2xl w-full max-w-5xl max-h-[95vh] flex flex-col">
         {/* Header */}
-        <div className="p-4 flex items-center justify-between border-b border-gray-800">
-          <h2 className="text-xl font-bold text-gray-100">{title}</h2>
-          <div className="flex items-center gap-4">
+        <div className="p-3 md:p-4 flex items-center justify-between border-b border-gray-800">
+          <h2 className="text-lg md:text-xl font-bold text-gray-100 truncate">{title}</h2>
+          <div className="flex items-center gap-2 md:gap-4">
             <button 
               onClick={handleExportData}
-              className="text-gray-400 hover:text-gray-200 p-2 rounded-full transition-colors"
+              className="text-gray-400 hover:text-gray-200 p-1 md:p-2 rounded-full transition-colors"
               title="Export data"
             >
-              <Download size={20} />
+              <Download size={isMobile ? 18 : 20} />
             </button>
             <button 
               onClick={onClose}
-              className="text-gray-400 hover:text-gray-200 p-2 rounded-full transition-colors"
+              className="text-gray-400 hover:text-gray-200 p-1 md:p-2 rounded-full transition-colors"
               title="Close"
             >
-              <X size={20} />
+              <X size={isMobile ? 18 : 20} />
             </button>
           </div>
         </div>
@@ -167,31 +213,31 @@ export function FullScreenChartModal({ isOpen, onClose, chartType, data, title }
         {/* Tab Navigation */}
         <div className="flex border-b border-gray-800">
           <button 
-            className={`px-4 py-2 font-medium ${activeTab === 'chart' ? 'text-blue-400 border-b-2 border-blue-400' : 'text-gray-400'}`}
+            className={`px-3 md:px-4 py-2 font-medium text-sm md:text-base ${activeTab === 'chart' ? 'text-blue-400 border-b-2 border-blue-400' : 'text-gray-400'}`}
             onClick={() => setActiveTab('chart')}
           >
-            <div className="flex items-center gap-2">
-              <BarChart size={18} />
+            <div className="flex items-center gap-1 md:gap-2">
+              <BarChart size={isMobile ? 16 : 18} />
               <span>Chart</span>
             </div>
           </button>
           <button 
-            className={`px-4 py-2 font-medium ${activeTab === 'data' ? 'text-blue-400 border-b-2 border-blue-400' : 'text-gray-400'}`}
+            className={`px-3 md:px-4 py-2 font-medium text-sm md:text-base ${activeTab === 'data' ? 'text-blue-400 border-b-2 border-blue-400' : 'text-gray-400'}`}
             onClick={() => setActiveTab('data')}
           >
-            <div className="flex items-center gap-2">
-              <FileText size={18} />
+            <div className="flex items-center gap-1 md:gap-2">
+              <FileText size={isMobile ? 16 : 18} />
               <span>Data</span>
             </div>
           </button>
         </div>
         
-        <div className="flex-1 overflow-auto p-6">
+        <div className="flex-1 overflow-auto p-3 md:p-6">
           {activeTab === 'chart' && (
             <div className="flex flex-col h-full">
               {/* Chart display */}
               <div className={`flex-1 ${showAnalysis ? 'h-1/2' : 'h-full'}`}>
-                <ResponsiveContainer width="100%" height={400}>
+                <ResponsiveContainer width="100%" height={chartHeight}>
                   {chartType === 'memberVsGeneral' ? (
                     <PieChart>
                       <Pie
@@ -199,11 +245,12 @@ export function FullScreenChartModal({ isOpen, onClose, chartType, data, title }
                         dataKey="value"
                         cx="50%"
                         cy="50%"
-                        outerRadius={160}
-                        innerRadius={100}
+                        outerRadius={isMobile ? 100 : 160}
+                        innerRadius={isMobile ? 60 : 100}
                         paddingAngle={5}
                         stroke="none"
-                        label={({name, value}) => `${name}: ${value}%`}
+                        label={isMobile ? undefined : renderCustomizedLabel}
+                        labelLine={false}
                       >
                         {data.map((_, index) => (
                           <Cell
@@ -222,7 +269,14 @@ export function FullScreenChartModal({ isOpen, onClose, chartType, data, title }
                         }}
                         itemStyle={{ color: '#E5E7EB' }}
                       />
-                      <Legend verticalAlign="bottom" height={36} />
+                      <Legend 
+                        verticalAlign="bottom" 
+                        height={36} 
+                        iconSize={isMobile ? 8 : 10}
+                        formatter={(value, entry) => (
+                          <span className="text-xs md:text-sm text-gray-300">{value}</span>
+                        )}
+                      />
                     </PieChart>
                   ) : (
                     <PieChart>
@@ -231,11 +285,12 @@ export function FullScreenChartModal({ isOpen, onClose, chartType, data, title }
                         dataKey="value"
                         cx="50%"
                         cy="50%"
-                        outerRadius={160}
-                        innerRadius={100}
+                        outerRadius={isMobile ? 100 : 160}
+                        innerRadius={isMobile ? 60 : 100}
                         paddingAngle={3}
                         stroke="none"
-                        label={({name, value}) => `${name}: ${((value / total) * 100).toFixed(1)}%`}
+                        label={isMobile ? undefined : renderCustomizedLabel}
+                        labelLine={false}
                       >
                         {data.map((_, index) => (
                           <Cell
@@ -255,7 +310,14 @@ export function FullScreenChartModal({ isOpen, onClose, chartType, data, title }
                         itemStyle={{ color: '#E5E7EB' }}
                         formatter={(value: number) => [`${value} guests (${((value / total) * 100).toFixed(1)}%)`, '']}
                       />
-                      <Legend verticalAlign="bottom" height={36} />
+                      <Legend 
+                        verticalAlign="bottom" 
+                        height={36} 
+                        iconSize={isMobile ? 8 : 10}
+                        formatter={(value, entry) => (
+                          <span className="text-xs md:text-sm text-gray-300">{value}</span>
+                        )}
+                      />
                     </PieChart>
                   )}
                 </ResponsiveContainer>
@@ -263,28 +325,28 @@ export function FullScreenChartModal({ isOpen, onClose, chartType, data, title }
               
               {/* AI Analysis button or section */}
               {!showAnalysis ? (
-                <div className="flex justify-center mt-6">
+                <div className="flex justify-center mt-3 md:mt-6">
                   <button
                     onClick={handleAnalyzeWithAI}
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-3 md:px-4 py-2 rounded-lg flex items-center gap-1 md:gap-2 transition-colors text-sm md:text-base"
                   >
-                    <BrainCircuit size={20} />
+                    <BrainCircuit size={isMobile ? 16 : 20} />
                     <span>Analyze with AI</span>
                   </button>
                 </div>
               ) : (
-                <div className="mt-6">
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-lg font-medium text-gray-200 flex items-center gap-2">
-                      <BrainCircuit className="text-blue-400" size={20} />
+                <div className="mt-3 md:mt-6">
+                  <div className="flex items-center justify-between mb-2 md:mb-3">
+                    <h3 className="text-base md:text-lg font-medium text-gray-200 flex items-center gap-1 md:gap-2">
+                      <BrainCircuit className="text-blue-400" size={isMobile ? 16 : 20} />
                       AI Analysis
                     </h3>
                     {analysisCompleted && (
                       <button
                         onClick={handleResetAnalysis}
-                        className="text-gray-400 hover:text-gray-200 flex items-center gap-1 text-sm"
+                        className="text-gray-400 hover:text-gray-200 flex items-center gap-1 text-xs md:text-sm"
                       >
-                        <RotateCcw size={14} />
+                        <RotateCcw size={isMobile ? 12 : 14} />
                         <span>Reset</span>
                       </button>
                     )}
@@ -296,22 +358,22 @@ export function FullScreenChartModal({ isOpen, onClose, chartType, data, title }
           )}
           
           {activeTab === 'data' && (
-            <div className="overflow-x-auto">
-              <table className="w-full text-gray-300">
+            <div className="overflow-x-auto -mx-3 md:-mx-6">
+              <table className="w-full text-gray-300 text-sm md:text-base">
                 <thead>
                   <tr className="border-b border-gray-700">
-                    <th className="text-left py-3 px-4">Category</th>
-                    <th className="text-right py-3 px-4">Value</th>
-                    <th className="text-right py-3 px-4">Percentage</th>
+                    <th className="text-left py-2 md:py-3 px-3 md:px-4">Category</th>
+                    <th className="text-right py-2 md:py-3 px-3 md:px-4">Value</th>
+                    <th className="text-right py-2 md:py-3 px-3 md:px-4">Percentage</th>
                     {chartType === 'ageGroups' && (
-                      <th className="text-left py-3 px-4">Notes</th>
+                      <th className="text-left py-2 md:py-3 px-3 md:px-4">Notes</th>
                     )}
                   </tr>
                 </thead>
                 <tbody>
                   {data.map((item, index) => (
                     <tr key={index} className="border-b border-gray-800">
-                      <td className="py-3 px-4 flex items-center gap-2">
+                      <td className="py-2 md:py-3 px-3 md:px-4 flex items-center gap-2">
                         <div 
                           className="w-3 h-3 rounded-full" 
                           style={{ 
@@ -322,10 +384,10 @@ export function FullScreenChartModal({ isOpen, onClose, chartType, data, title }
                         ></div>
                         {item.name}
                       </td>
-                      <td className="text-right py-3 px-4">{item.value}</td>
-                      <td className="text-right py-3 px-4">{((item.value / total) * 100).toFixed(1)}%</td>
+                      <td className="text-right py-2 md:py-3 px-3 md:px-4">{item.value}</td>
+                      <td className="text-right py-2 md:py-3 px-3 md:px-4">{((item.value / total) * 100).toFixed(1)}%</td>
                       {chartType === 'ageGroups' && (
-                        <td className="text-left py-3 px-4 text-gray-400">
+                        <td className="text-left py-2 md:py-3 px-3 md:px-4 text-gray-400 text-xs md:text-sm">
                           {(item as AgeGroupData).additionalContext || 'No additional data'}
                         </td>
                       )}
@@ -334,9 +396,9 @@ export function FullScreenChartModal({ isOpen, onClose, chartType, data, title }
                 </tbody>
                 <tfoot className="bg-gray-800/50">
                   <tr>
-                    <td className="py-3 px-4 font-medium">Total</td>
-                    <td className="text-right py-3 px-4 font-medium">{total}</td>
-                    <td className="text-right py-3 px-4 font-medium">100%</td>
+                    <td className="py-2 md:py-3 px-3 md:px-4 font-medium">Total</td>
+                    <td className="text-right py-2 md:py-3 px-3 md:px-4 font-medium">{total}</td>
+                    <td className="text-right py-2 md:py-3 px-3 md:px-4 font-medium">100%</td>
                     {chartType === 'ageGroups' && <td></td>}
                   </tr>
                 </tfoot>
@@ -346,8 +408,8 @@ export function FullScreenChartModal({ isOpen, onClose, chartType, data, title }
         </div>
         
         {/* Footer */}
-        <div className="p-4 border-t border-gray-800 flex justify-between text-sm text-gray-400">
-          <div>Last updated: {new Date().toLocaleDateString()}</div>
+        <div className="p-3 md:p-4 border-t border-gray-800 flex flex-col md:flex-row justify-between text-xs md:text-sm text-gray-400">
+          <div className="mb-1 md:mb-0">Last updated: {new Date().toLocaleDateString()}</div>
           <div>Data source: Hotel Management System</div>
         </div>
       </div>
