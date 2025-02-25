@@ -3,7 +3,7 @@ import React, { ReactNode, Fragment, useState, useEffect } from 'react';
 import { TrendingUp, TrendingDown, Home, DollarSign, Users, Calendar, Gift, Bell, Star, Coffee, Sun, Moon } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend, ReferenceLine } from 'recharts';
 import { Menu, Transition } from '@headlessui/react';
-//import { FullScreenChartModal } from './FullScreenChartModal';
+import { FullScreenChartModal } from './FullScreenChartModal';
 import { format } from 'date-fns';
 import { api } from './api';
 import toast from 'react-hot-toast';
@@ -74,6 +74,11 @@ interface AgeGroups {
 interface CanceledBookings {
     canceled_percentage: number;
     canceled_bookings: number;
+}
+
+interface MemberVsGeneralData {
+    member_arrivals: number;
+    general_arrivals: number;
 }
 
 // Layout Component
@@ -224,8 +229,10 @@ export function KeyInsights() {
     );
 }
 
+// Updated Member vs General Chart Component
 export function MemberVsGeneralChart() {
-    const [data, setData] = useState<{ name: string; value: number; }[]>([]);
+    const [rawData, setRawData] = useState<MemberVsGeneralData | null>(null);
+    const [chartData, setChartData] = useState<{name: string; value: number;}[]>([]);
     const [loading, setLoading] = useState(true);
     const [isFullScreen, setIsFullScreen] = useState(false);
 
@@ -233,7 +240,8 @@ export function MemberVsGeneralChart() {
         const fetchData = async () => {
             try {
                 const result = await api.getMemberVsGeneral();
-                setData([
+                setRawData(result);
+                setChartData([
                     { name: 'Members', value: result.member_arrivals },
                     { name: 'General Guests', value: result.general_arrivals }
                 ]);
@@ -247,15 +255,14 @@ export function MemberVsGeneralChart() {
         fetchData();
     }, []);
 
-    if (loading) return <LoadingCard />;
+    if (loading) return (
+        <div className="bg-black p-6 rounded-xl shadow-lg">
+            <div className="h-5 w-24 bg-gray-700 rounded animate-pulse mb-2" />
+            <div className="h-7 w-36 bg-gray-700 rounded animate-pulse" />
+        </div>
+    );
 
     const COLORS = ['#3B82F6', '#10B981'];
-
-    // Function to handle Gemini analysis
-    const handleAnalyzeWithGemini = () => {
-        toast.success('Analyzing with Gemini...');
-        // Add your Gemini analysis logic here
-    };
 
     return (
         <>
@@ -270,18 +277,18 @@ export function MemberVsGeneralChart() {
                     <div className="flex justify-center gap-6">
                         <div className="flex items-center">
                             <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: COLORS[0] }}></div>
-                            <span className="text-gray-300">Members: {data[0].value}%</span>
+                            <span className="text-gray-300">Members: {chartData[0].value}%</span>
                         </div>
                         <div className="flex items-center">
                             <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: COLORS[1] }}></div>
-                            <span className="text-gray-300">Guests: {data[1].value}%</span>
+                            <span className="text-gray-300">Guests: {chartData[1].value}%</span>
                         </div>
                     </div>
                 </div>
                 <ResponsiveContainer width="100%" height={250}>
                     <PieChart>
                         <Pie
-                            data={data}
+                            data={chartData}
                             dataKey="value"
                             cx="50%"
                             cy="50%"
@@ -290,7 +297,7 @@ export function MemberVsGeneralChart() {
                             paddingAngle={5}
                             stroke="none"
                         >
-                            {data.map((_, index) => (
+                            {chartData.map((_, index) => (
                                 <Cell
                                     key={`cell-${index}`}
                                     fill={COLORS[index % COLORS.length]}
@@ -311,6 +318,15 @@ export function MemberVsGeneralChart() {
                 </ResponsiveContainer>
             </div>
 
+            {isFullScreen && (
+                <FullScreenChartModal
+                    isOpen={isFullScreen}
+                    onClose={() => setIsFullScreen(false)}
+                    chartType="memberVsGeneral"
+                    data={chartData}
+                    title="Member vs. General Guests Analysis"
+                />
+            )}
         </>
     );
 }
@@ -712,8 +728,10 @@ export function TodayStatus() {
     );
 }
 
+// Updated Age Group Segmentation Component
 export function AgeGroupSegmentation() {
     const [ageData, setAgeData] = useState<AgeGroups | null>(null);
+    const [chartData, setChartData] = useState<{name: string; value: number; additionalContext?: string;}[]>([]);
     const [loading, setLoading] = useState(true);
     const [isFullScreen, setIsFullScreen] = useState(false);
 
@@ -722,6 +740,28 @@ export function AgeGroupSegmentation() {
             try {
                 const result = await api.getAgeGroups();
                 setAgeData(result);
+                setChartData([
+                    { 
+                        name: 'Child', 
+                        value: result.child, 
+                        additionalContext: 'Ages 0-17' 
+                    },
+                    { 
+                        name: 'Adult', 
+                        value: result.adult, 
+                        additionalContext: 'Ages 18-35' 
+                    },
+                    { 
+                        name: 'Middle Age', 
+                        value: result.middle_age, 
+                        additionalContext: 'Ages 36-60' 
+                    },
+                    { 
+                        name: 'Elder', 
+                        value: result.elder, 
+                        additionalContext: 'Ages 61+' 
+                    }
+                ]);
             } catch (error) {
                 toast.error('Failed to load age group data');
             } finally {
@@ -732,24 +772,15 @@ export function AgeGroupSegmentation() {
         fetchData();
     }, []);
 
-    if (loading) return <LoadingCard />;
-
-    // Prepare data for pie chart
-    const data = ageData ? [
-        { name: 'Child', value: ageData.child },
-        { name: 'Adult', value: ageData.adult },
-        { name: 'Middle Age', value: ageData.middle_age },
-        { name: 'Elder', value: ageData.elder }
-    ] : [];
+    if (loading) return (
+        <div className="bg-black p-6 rounded-xl shadow-lg">
+            <div className="h-5 w-24 bg-gray-700 rounded animate-pulse mb-2" />
+            <div className="h-7 w-36 bg-gray-700 rounded animate-pulse" />
+        </div>
+    );
 
     const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444'];
     const totalGuests = ageData ? ageData.child + ageData.adult + ageData.middle_age + ageData.elder : 0;
-
-    // Function to handle data analysis
-    const handleAnalyzeData = () => {
-        toast.success('Analyzing age group data...');
-        // Add your analysis logic here
-    };
 
     return (
         <>
@@ -763,7 +794,7 @@ export function AgeGroupSegmentation() {
                 </div>
                 
                 <div className="flex justify-center gap-4 mb-4 flex-wrap">
-                    {data.map((entry, index) => (
+                    {chartData.map((entry, index) => (
                         <div key={`legend-${index}`} className="flex items-center">
                             <div 
                                 className="w-3 h-3 rounded-full mr-2" 
@@ -777,7 +808,7 @@ export function AgeGroupSegmentation() {
                 <ResponsiveContainer width="100%" height={250}>
                     <PieChart>
                         <Pie
-                            data={data}
+                            data={chartData}
                             dataKey="value"
                             cx="50%"
                             cy="50%"
@@ -786,7 +817,7 @@ export function AgeGroupSegmentation() {
                             paddingAngle={3}
                             stroke="none"
                         >
-                            {data.map((entry, index) => (
+                            {chartData.map((entry, index) => (
                                 <Cell 
                                     key={`cell-${index}`} 
                                     fill={COLORS[index % COLORS.length]}
@@ -807,6 +838,16 @@ export function AgeGroupSegmentation() {
                     </PieChart>
                 </ResponsiveContainer>
             </div>
+
+            {isFullScreen && (
+                <FullScreenChartModal
+                    isOpen={isFullScreen}
+                    onClose={() => setIsFullScreen(false)}
+                    chartType="ageGroups"
+                    data={chartData}
+                    title="Guest Age Demographics Analysis"
+                />
+            )}
         </>
     );
 }
