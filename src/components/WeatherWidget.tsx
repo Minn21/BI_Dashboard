@@ -109,12 +109,6 @@ export function WeatherWidget() {
                         <h3 className="text-lg md:text-xl font-bold">--°C</h3>
                         <p className="text-xs md:text-sm">Weather unavailable</p>
                     </div>
-                    <button 
-                        onClick={handleRefresh}
-                        className="p-2 bg-blue-500 bg-opacity-30 rounded-full hover:bg-opacity-50 transition-all"
-                    >
-                        <RefreshCw className="w-4 h-4 md:w-5 md:h-5 text-white" />
-                    </button>
                 </div>
             </div>
         );
