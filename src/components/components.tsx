@@ -311,13 +311,6 @@ export function MemberVsGeneralChart() {
                 </ResponsiveContainer>
             </div>
 
-            {isFullScreen && (
-                <FullScreenChartModal
-                    data={data}
-                    onClose={() => setIsFullScreen(false)}
-                    onAnalyzeWithGemini={handleAnalyzeWithGemini} // Pass the Gemini analysis function
-                />
-            )}
         </>
     );
 }
