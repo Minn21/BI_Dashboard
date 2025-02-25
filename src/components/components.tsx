@@ -3,7 +3,7 @@ import React, { ReactNode, Fragment, useState, useEffect } from 'react';
 import { TrendingUp, TrendingDown, Home, DollarSign, Users, Calendar, Gift, Bell, Star, Coffee, Sun, Moon } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend, ReferenceLine } from 'recharts';
 import { Menu, Transition } from '@headlessui/react';
-import { FullScreenChartModal } from './FullScreenChartModal';
+//import { FullScreenChartModal } from './FullScreenChartModal';
 import { format } from 'date-fns';
 import { api } from './api';
 import toast from 'react-hot-toast';
@@ -884,7 +884,7 @@ const components = {
     GuestSatisfaction,
     TodayStatus,
     CoffeeBreakTimer,
-    FullScreenChartModal, 
+    //FullScreenChartModal, 
     CanceledBookings
 };
 
