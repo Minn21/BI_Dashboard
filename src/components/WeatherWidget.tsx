@@ -43,13 +43,15 @@ export function WeatherWidget() {
     };
 
     useEffect(() => {
+        // Fetch weather data immediately when the component mounts
         fetchWeatherData();
-    }, []);
 
-    const handleRefresh = () => {
-        setLoading(true);
-        fetchWeatherData();
-    };
+        // Set up a polling interval to fetch weather data every 5 minutes (300,000 milliseconds)
+        const interval = setInterval(fetchWeatherData, 100000); // 5 minutes
+
+        // Clean up the interval when the component unmounts
+        return () => clearInterval(interval);
+    }, []);
 
     if (loading) {
         return (
@@ -79,26 +81,23 @@ export function WeatherWidget() {
     }
 
     return (
-        <div className="bg-gradient-to-br from-blue-500 to-purple-600 p-6 rounded-xl shadow-lg">
+        <div className="bg-gradient-to-br from-blue-500 to-purple-600 p-5 rounded-xl shadow-lg">
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                     {weatherData.isDay ? (
-                        <Sun className="w-10 h-10 text-yellow-300 animate-spin-slow" />
+                        <Sun className="w-10 h-10 text-yellow-300 animate-spin-slow transition-transform transform hover:scale-110" />
                     ) : (
-                        <Moon className="w-10 h-10 text-gray-200 animate-pulse" />
+                        <Moon className="w-10 h-10 text-gray-200 animate-pulse transition-transform transform hover:scale-110" />
                     )}
                     <div className="text-white">
-                        <h3 className="text-3xl font-bold">{weatherData.temperature}°C</h3>
-                        <p className="text-sm capitalize">{weatherData.condition}</p>
+                        <h3 className="text-3xl font-bold transition-opacity duration-500 ease-in-out">
+                            {weatherData.temperature}°C
+                        </h3>
+                        <p className="text-sm capitalize transition-opacity duration-500 ease-in-out">
+                            {weatherData.condition}
+                        </p>
                     </div>
                 </div>
-                <button
-                    onClick={handleRefresh}
-                    className="p-4 rounded-full hover:bg-gray-800/20 transition-colors"
-                    title="Refresh weather"
-                >
-                    <RefreshCw className="w-5 h-5 text-white" />
-                </button>
             </div>
         </div>
     );

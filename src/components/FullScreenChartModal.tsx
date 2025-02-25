@@ -3,8 +3,13 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import toast from 'react-hot-toast';
 
 interface FullScreenChartModalProps {
-    data: { name: string; value: number }[];
+    title: string;
+    data: { name: string; value: number; }[];
+    colors: string[];
     onClose: () => void;
+    onAnalyze: () => void;
+    totalValue: number;
+    valueLabel: string;
     onAnalyzeWithGemini: () => void; // New prop for Gemini analysis
 }
 

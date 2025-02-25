@@ -43,6 +43,39 @@ interface OccupancyADR {
     adr: number;
 }
 
+interface BookingArrivals {
+    current_month_arrivals: number;
+    current_year_arrivals: number;
+    percentage_current_month: number;
+}
+
+interface UnitBooking {
+    unit_id: string;
+    booking_count: number;
+}
+
+interface TotalIncome {
+    total_income_month: number;
+    total_income_year: number;
+}
+
+interface TodayStatus {
+    today_arrivals: number;
+    today_departures: number;
+}
+
+interface AgeGroups {
+    child: number;
+    adult: number;
+    middle_age: number;
+    elder: number;
+}
+
+interface CanceledBookings {
+    canceled_percentage: number;
+    canceled_bookings: number;
+}
+
 // Layout Component
 export function DashboardLayout({ children }: LayoutProps) {
     return (
@@ -109,26 +142,51 @@ export function MetricsCard({ title, value, percentage, trend, icon }: MetricsCa
     );
 }
 
-// Key Insights Component
+// KeyInsights Component with real data
 export function KeyInsights() {
-    const insights: Insight[] = [
+    const [mostBookedUnit, setMostBookedUnit] = useState<UnitBooking | null>(null);
+    const [income, setIncome] = useState<TotalIncome | null>(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const [unitData, incomeData] = await Promise.all([
+                    api.getMostBookedUnit(),
+                    api.getTotalIncome()
+                ]);
+                setMostBookedUnit(unitData);
+                setIncome(incomeData);
+            } catch (error) {
+                toast.error('Failed to load insights data');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchData();
+    }, []);
+
+    if (loading) return <LoadingCard />;
+
+    const insights = [
         {
             title: 'Most Booked Room',
-            value: 'Suite 301',
+            value: mostBookedUnit?.unit_id || 'N/A',
             icon: <Home className="w-5 h-5 text-blue-500" />,
-            trend: '+15% bookings'
+            trend: `${mostBookedUnit?.booking_count || 0} bookings`
         },
         {
-            title: 'Highest Revenue',
-            value: '$5,000',
+            title: 'Monthly Revenue',
+            value: `$${income?.total_income_month.toLocaleString() || 0}`,
             icon: <DollarSign className="w-5 h-5 text-green-500" />,
             trend: '+8% this month'
         },
         {
-            title: 'Lowest Occupancy',
-            value: 'Deluxe 102',
-            icon: <TrendingUp className="w-5 h-5 text-red-500" />,
-            trend: '-5% occupancy'
+            title: 'Yearly Revenue',
+            value: `$${income?.total_income_year.toLocaleString() || 0}`,
+            icon: <TrendingUp className="w-5 h-5 text-green-500" />,
+            trend: 'Year to date'
         },
     ];
 
@@ -155,12 +213,9 @@ export function KeyInsights() {
                                     </span>
                                 </div>
                             </div>
-                            {insight.trend && (
-                                <span className={`text-sm ${insight.trend.startsWith('+') ? 'text-green-400' : 'text-red-400'
-                                    }`}>
-                                    {insight.trend}
-                                </span>
-                            )}
+                            <span className="text-sm text-gray-400">
+                                {insight.trend}
+                            </span>
                         </div>
                     </div>
                 ))}
@@ -360,31 +415,27 @@ export function AlertButton() {
     );
 }
 
-// Arrival Stats Component
+// ArrivalStats Component with real data
 export function ArrivalStats() {
-    const data: ArrivalData[] = [
-        { date: '2023-10-01', arrivals: 24 },
-        { date: '2023-10-02', arrivals: 30 },
-        { date: '2023-10-03', arrivals: 18 },
-        { date: '2023-10-04', arrivals: 42 },
-        { date: '2023-10-05', arrivals: 36 },
-    ];
+    const [arrivalData, setArrivalData] = useState<BookingArrivals | null>(null);
+    const [loading, setLoading] = useState(true);
 
-    const averageArrivals = Math.round(data.reduce((acc, curr) => acc + curr.arrivals, 0) / data.length);
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const result = await api.getBookingArrivals();
+                setArrivalData(result);
+            } catch (error) {
+                toast.error('Failed to load arrival data');
+            } finally {
+                setLoading(false);
+            }
+        };
 
-    const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?: { value: number }[]; label?: string }) => {
-        if (active && payload && payload.length) {
-            return (
-                <div className="bg-gray-800 p-4 rounded-lg shadow-lg border border-gray-700">
-                    <p className="font-semibold text-gray-200">{label ? format(new Date(label), 'MMM dd') : 'N/A'}</p>
-                    <p className="text-sm text-gray-400 mt-1">
-                        <span className="font-medium text-blue-400">{payload[0].value}</span> arrivals
-                    </p>
-                </div>
-            );
-        }
-        return null;
-    };
+        fetchData();
+    }, []);
+
+    if (loading) return <LoadingCard />;
 
     return (
         <div className="bg-gray-900 p-6 rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 col-span-2">
@@ -394,55 +445,32 @@ export function ArrivalStats() {
                         <Users className="w-5 h-5 text-blue-500" />
                         <h3 className="text-xl font-semibold text-gray-100">Booking Arrivals</h3>
                     </div>
-                    <p className="text-sm text-gray-400">Daily arrivals for the current month</p>
+                    <p className="text-sm text-gray-400">Current month arrivals: {arrivalData?.current_month_arrivals}</p>
                 </div>
 
                 <div className="flex items-center gap-4">
                     <div className="text-right">
-                        <p className="text-sm text-gray-400">Average</p>
-                        <p className="text-lg font-semibold text-gray-200">{averageArrivals}</p>
+                        <p className="text-sm text-gray-400">Monthly</p>
+                        <p className="text-lg font-semibold text-gray-200">{arrivalData?.current_month_arrivals}</p>
                     </div>
                     <div className="text-right">
-                        <p className="text-sm text-gray-400">Target</p>
-                        <p className="text-lg font-semibold text-red-400">30</p>
+                        <p className="text-sm text-gray-400">Yearly</p>
+                        <p className="text-lg font-semibold text-blue-400">{arrivalData?.current_year_arrivals}</p>
                     </div>
                 </div>
             </div>
 
             <div className="bg-gray-800/50 p-4 rounded-lg">
-                <ResponsiveContainer width="100%" height={300}>
-                    <BarChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#374151" vertical={false} />
-                        <XAxis
-                            dataKey="date"
-                            tickFormatter={(date) => format(new Date(date), 'MMM dd')}
-                            stroke="#9CA3AF"
-                            tick={{ fill: '#9CA3AF' }}
+                <div className="mb-4">
+                    <h4 className="text-gray-300 mb-2">Monthly Performance</h4>
+                    <div className="w-full bg-gray-700 rounded-full h-4">
+                        <div
+                            className="bg-blue-500 h-4 rounded-full"
+                            style={{ width: `${arrivalData?.percentage_current_month || 0}%` }}
                         />
-                        <YAxis
-                            stroke="#9CA3AF"
-                            tick={{ fill: '#9CA3AF' }}
-                        />
-                        <Tooltip content={<CustomTooltip />} />
-                        <Legend
-                            formatter={(value) => <span className="text-gray-400">{value}</span>}
-                        />
-                        <ReferenceLine
-                            y={30}
-                            stroke="#EF4444"
-                            strokeDasharray="4 4"
-                            label={{ value: "Target", fill: "#EF4444", position: "right" }}
-                        />
-                        <Bar
-                            dataKey="arrivals"
-                            name="Daily Arrivals"
-                            radius={[4, 4, 0, 0]}
-                            fill="#3B82F6"
-                            animationDuration={1500}
-                            animationEasing="ease-in-out"
-                        />
-                    </BarChart>
-                </ResponsiveContainer>
+                    </div>
+                    <p className="text-gray-400 mt-2">{arrivalData?.percentage_current_month.toFixed(1)}% of yearly arrivals</p>
+                </div>
             </div>
         </div>
     );
@@ -642,12 +670,216 @@ export function FilterDropdown() {
     );
 }
 
+// TodayStatus Component with real data
+export function TodayStatus() {
+    const [statusData, setStatusData] = useState<TodayStatus | null>(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const result = await api.getTodayStatus();
+                setStatusData(result);
+            } catch (error) {
+                toast.error('Failed to load today\'s status');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchData();
+    }, []);
+
+    if (loading) return <LoadingCard />;
+
+    return (
+        <div className="bg-gray-900 p-6 rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300">
+            <h3 className="text-xl font-semibold text-gray-100 mb-6">Today's Movement</h3>
+            <div className="grid grid-cols-2 gap-4">
+                <div className="bg-gray-800/50 p-4 rounded-lg">
+                    <div className="flex flex-col items-center">
+                        <div className="p-2 rounded-full bg-blue-500/20 mb-2">
+                            <Users className="w-5 h-5 text-blue-500" />
+                        </div>
+                        <span className="text-2xl font-bold text-gray-100">{statusData?.today_arrivals}</span>
+                        <span className="text-sm text-gray-400">Arrivals</span>
+                    </div>
+                </div>
+                <div className="bg-gray-800/50 p-4 rounded-lg">
+                    <div className="flex flex-col items-center">
+                        <div className="p-2 rounded-full bg-green-500/20 mb-2">
+                            <Home className="w-5 h-5 text-green-500" />
+                        </div>
+                        <span className="text-2xl font-bold text-gray-100">{statusData?.today_departures}</span>
+                        <span className="text-sm text-gray-400">Departures</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+export function AgeGroupSegmentation() {
+    const [ageData, setAgeData] = useState<AgeGroups | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [isFullScreen, setIsFullScreen] = useState(false);
+
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const result = await api.getAgeGroups();
+                setAgeData(result);
+            } catch (error) {
+                toast.error('Failed to load age group data');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchData();
+    }, []);
+
+    if (loading) return <LoadingCard />;
+
+    // Prepare data for pie chart
+    const data = ageData ? [
+        { name: 'Child', value: ageData.child },
+        { name: 'Adult', value: ageData.adult },
+        { name: 'Middle Age', value: ageData.middle_age },
+        { name: 'Elder', value: ageData.elder }
+    ] : [];
+
+    const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444'];
+    const totalGuests = ageData ? ageData.child + ageData.adult + ageData.middle_age + ageData.elder : 0;
+
+    // Function to handle data analysis
+    const handleAnalyzeData = () => {
+        toast.success('Analyzing age group data...');
+        // Add your analysis logic here
+    };
+
+    return (
+        <>
+            <div 
+                className="bg-gray-900 p-6 rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 cursor-pointer"
+                onClick={() => setIsFullScreen(true)}
+            >
+                <h3 className="text-xl font-semibold text-gray-100 mb-4">Guest Age Groups</h3>
+                <div className="text-center mb-4">
+                    <p className="text-gray-400">Total guests: {totalGuests}</p>
+                </div>
+                
+                <div className="flex justify-center gap-4 mb-4 flex-wrap">
+                    {data.map((entry, index) => (
+                        <div key={`legend-${index}`} className="flex items-center">
+                            <div 
+                                className="w-3 h-3 rounded-full mr-2" 
+                                style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                            ></div>
+                            <span className="text-gray-300">{entry.name}: {entry.value}</span>
+                        </div>
+                    ))}
+                </div>
+                
+                <ResponsiveContainer width="100%" height={250}>
+                    <PieChart>
+                        <Pie
+                            data={data}
+                            dataKey="value"
+                            cx="50%"
+                            cy="50%"
+                            outerRadius={80}
+                            innerRadius={40}
+                            paddingAngle={3}
+                            stroke="none"
+                        >
+                            {data.map((entry, index) => (
+                                <Cell 
+                                    key={`cell-${index}`} 
+                                    fill={COLORS[index % COLORS.length]}
+                                    className="hover:opacity-80 transition-opacity duration-300" 
+                                />
+                            ))}
+                        </Pie>
+                        <Tooltip 
+                            contentStyle={{
+                                backgroundColor: '#1F2937',
+                                border: 'none',
+                                borderRadius: '0.5rem',
+                                padding: '0.5rem',
+                            }}
+                            itemStyle={{ color: '#E5E7EB' }}
+                            formatter={(value: number) => [`${value} guests (${((value / totalGuests) * 100).toFixed(1)}%)`, '']}
+                        />
+                    </PieChart>
+                </ResponsiveContainer>
+            </div>
+        </>
+    );
+}
+
+// CanceledBookings Component with real data
+export function CanceledBookings() {
+    const [cancelData, setCancelData] = useState<CanceledBookings | null>(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const result = await api.getCanceledBookings();
+                setCancelData(result);
+            } catch (error) {
+                toast.error('Failed to load cancellation data');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchData();
+    }, []);
+
+    if (loading) return <LoadingCard />;
+
+    // Calculate warning level based on cancellation percentage
+    const getWarningLevel = (percentage: number) => {
+        if (percentage > 15) return 'text-red-500';
+        if (percentage > 10) return 'text-yellow-500';
+        return 'text-green-500';
+    };
+
+    return (
+        <div className="bg-gray-900 p-6 rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300">
+            <h3 className="text-xl font-semibold text-gray-100 mb-6">Cancellation Status</h3>
+            <div className="bg-gray-800/50 p-4 rounded-lg">
+                <div className="flex flex-col items-center mb-4">
+                    <span className={`text-3xl font-bold ${getWarningLevel(cancelData?.canceled_percentage || 0)}`}>
+                        {cancelData?.canceled_percentage.toFixed(1)}%
+                    </span>
+                    <span className="text-sm text-gray-400">Cancellation Rate</span>
+                </div>
+                <div className="w-full bg-gray-700 rounded-full h-2 mb-4">
+                    <div
+                        className={`h-2 rounded-full ${getWarningLevel(cancelData?.canceled_percentage || 0)}`}
+                        style={{ width: `${cancelData?.canceled_percentage || 0}%` }}
+                    />
+                </div>
+                <div className="text-center">
+                    <span className="text-gray-400">
+                        {cancelData?.canceled_bookings} bookings canceled
+                    </span>
+                </div>
+            </div>
+        </div>
+    );
+}
+
 const components = {
     DashboardLayout,
     LoadingCard,
     MetricsCard,
     KeyInsights,
     MemberVsGeneralChart,
+    AgeGroupSegmentation,
     OccupancyRate,
     ProgressBar,
     SearchBar,
@@ -657,8 +889,10 @@ const components = {
     FilterDropdown,
     NotificationBell,
     GuestSatisfaction,
+    TodayStatus,
     CoffeeBreakTimer,
     FullScreenChartModal, 
+    CanceledBookings
 };
 
 export default components;

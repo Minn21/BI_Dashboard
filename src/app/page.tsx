@@ -1,103 +1,85 @@
 'use client';
 import React from 'react';
-import { Users, Calendar, LogOut, AlertTriangle } from 'lucide-react';
-
 import {
   ArrivalStats,
   MemberVsGeneralChart,
   OccupancyRate,
   BirthdayList,
   KeyInsights,
-  MetricsCard as ComponentMetricsCard,
+  CanceledBookings,
   FilterDropdown,
   SearchBar,
   NotificationBell,
   GuestSatisfaction,
+  TodayStatus,
+  AgeGroupSegmentation,
   CoffeeBreakTimer
 } from '../components/components';
 import { WeatherWidget } from '../components/WeatherWidget';
 
 const Dashboard = () => {
   return (
-    <div className="min-h-screen bg-gray-900 p-4 md:p-6 lg:p-8">
-      {/* Header */}
-      <div className="mb-8">
-        <div className="flex justify-between items-center mb-4">
-          <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-100">
-            Hotel Dashboard
-          </h1>
-          <div className="flex items-center gap-4">
+    <div className="min-h-screen bg-gray-900 p-4 md:p-6 lg:p-8 space-y-6">
+      {/* Header Section */}
+      <header className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
+        <h1 className="text-2xl md:text-3xl font-bold text-gray-100">
+          Hotel Management Dashboard
+        </h1>
+        
+        <div className="flex items-center gap-4 w-full md:w-auto">
+          <div className="flex-1 min-w-[200px]">
+            <SearchBar />
+          </div>
+          <div className="flex items-center gap-2">
+            <FilterDropdown />
             <NotificationBell />
             <WeatherWidget />
           </div>
         </div>
-        
-        {/* Search and Filter */}
-        <div className="flex flex-col sm:flex-row gap-4 mb-6">
-          <FilterDropdown />
-          <SearchBar />
-        </div>
+      </header>
 
-        {/* Key Metrics */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <ComponentMetricsCard
-            title="Today's Arrivals"
-            value="24"
-            trend="up"
-            percentage={5}
-            icon={<Users className="w-5 h-5 text-blue-500" />}
-          />
-          <ComponentMetricsCard
-            title="Today's Departures"
-            value="18"
-            trend="down"
-            percentage={2}
-            icon={<LogOut className="w-5 h-5 text-green-500" />}
-          />
-          <ComponentMetricsCard
-            title="Canceled Bookings"
-            value="12"
-            trend="down"
-            percentage={8}
-            icon={<AlertTriangle className="w-5 h-5 text-red-500" />}
-          />
-          <ComponentMetricsCard
-            title="Upcoming Events"
-            value="5"
-            trend="up"
-            percentage={10}
-            icon={<Calendar className="w-5 h-5 text-purple-500" />}
-          />
-        </div>
+      {/* Key Performance Indicators */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <TodayStatus />
+        <OccupancyRate />
+        <CanceledBookings />
+        <KeyInsights />
       </div>
 
-      {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Full Width Charts */}
-        <div className="lg:col-span-2">
+      {/* Main Content Area */}
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+        {/* Primary Data Visualization */}
+        <div className="lg:col-span-3 space-y-6">
           <ArrivalStats />
-        </div>
-        <div className="lg:col-span-1">
-          <MemberVsGeneralChart />
-        </div>
-        
-        {/* Three Column Section */}
-        <div className="lg:col-span-1">
-          <OccupancyRate />
-        </div>
-        <div className="lg:col-span-1">
-          <KeyInsights />
-        </div>
-        <div className="lg:col-span-1">
-          <BirthdayList />
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <MemberVsGeneralChart />
+            <AgeGroupSegmentation />
+          </div>
         </div>
 
-        {/* New Components */}
-        <div className="lg:col-span-1">
-          <GuestSatisfaction />
-        </div>
-        <div className="lg:col-span-1">
-          <CoffeeBreakTimer />
+        {/* Secondary Information & Tools */}
+        <div className="lg:col-span-2 space-y-6">
+          <div className="grid grid-cols-1 gap-6">
+            <BirthdayList />
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <GuestSatisfaction />
+              <CoffeeBreakTimer />
+            </div>
+            
+            <div className="bg-gray-800 p-6 rounded-xl shadow-lg">
+              <h3 className="text-lg font-semibold text-gray-100 mb-4">Quick Actions</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <button className="p-3 bg-gray-700 rounded-lg hover:bg-gray-600 transition-colors">
+                  Generate Report
+                </button>
+                <button className="p-3 bg-gray-700 rounded-lg hover:bg-gray-600 transition-colors">
+                  Add Booking
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

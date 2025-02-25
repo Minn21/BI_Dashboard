@@ -1,5 +1,5 @@
 // api.ts
-const API_BASE_URL = 'http://localhost:8000';
+const API_BASE_URL = 'https://bi-dashboard-backend.vercel.app';
 
 export interface APIResponse<T> {
   success: boolean;
