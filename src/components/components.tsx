@@ -563,55 +563,6 @@ export function BirthdayList() {
   );
 }
 
-// New Notification Bell Component
-export function NotificationBell() {
-  const [count, setCount] = useState(3);
-  const [isAnimating, setIsAnimating] = useState(false);
-
-  const handleClick = () => {
-    setIsAnimating(true);
-    toast.success('Notifications cleared!');
-    setCount(0);
-    setTimeout(() => setIsAnimating(false), 500);
-  };
-
-  return (
-    <button
-      onClick={handleClick}
-      className="relative p-2 rounded-full hover:bg-gray-800 transition-colors"
-    >
-      <Bell className={`w-6 h-6 text-gray-300 ${isAnimating ? 'animate-shake' : ''}`} />
-      {count > 0 && (
-        <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center animate-bounce">
-          {count}
-        </span>
-      )}
-    </button>
-  );
-}
-
-// New Guest Satisfaction Component
-export function GuestSatisfaction() {
-  const [rating, setRating] = useState(4.5);
-  const maxStars = 5;
-
-  return (
-    <div className="bg-gray-900 p-6 rounded-xl shadow-lg">
-      <h3 className="text-xl font-semibold text-gray-100 mb-4">Guest Satisfaction</h3>
-      <div className="flex items-center gap-2 mb-4">
-        {[...Array(maxStars)].map((_, index) => (
-          <Star
-            key={index}
-            className={`w-8 h-8 cursor-pointer transition-colors ${index < rating ? 'text-yellow-400 animate-pulse' : 'text-gray-600'}`}
-            onClick={() => setRating(index + 1)}
-          />
-        ))}
-      </div>
-      <p className="text-gray-400">{rating.toFixed(1)} out of 5</p>
-    </div>
-  );
-}
-
 // New Coffee Break Timer Component
 export function CoffeeBreakTimer() {
   const [timeLeft, setTimeLeft] = useState(300); // 5 minutes in seconds
@@ -937,8 +888,6 @@ const components = {
   ArrivalStats,
   BirthdayList,
   FilterDropdown,
-  NotificationBell,
-  GuestSatisfaction,
   TodayStatus,
   CoffeeBreakTimer,
   CanceledBookings

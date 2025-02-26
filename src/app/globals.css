@@ -2,6 +2,23 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer utilities {
+  /* Smooth transitions for all interactive elements */
+  * {
+    @apply transition-all duration-300 ease-out;
+  }
+  
+  /* Better scroll behavior */
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  /* Gradient text fallback */
+  .gradient-text {
+    @apply bg-clip-text text-transparent;
+  }
+}
+
 :root {
   /* Core theme colors */
   --background: #0a0a0a;

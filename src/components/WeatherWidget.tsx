@@ -109,26 +109,28 @@ export function WeatherWidget() {
         else return "from-blue-900 to-purple-900";
     };
 
-    return (
-        <div className={`bg-gradient-to-br ${getTimeBasedGradient()} p-3 md:p-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 w-full max-w-xs`}>
-            <div className="flex flex-col space-y-2">
-                <div className="flex items-center justify-between">
-                    <span className="text-sm md:text-base font-medium text-white opacity-90">{weatherData.city}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                        {getWeatherIcon(weatherData.condition, weatherData.isDay)}
-                        <div>
-                            <h3 className="text-2xl md:text-3xl lg:text-4xl font-bold text-white">
-                                {weatherData.temperature}°C
-                            </h3>
-                            <p className="text-sm md:text-base capitalize text-white opacity-90">
-                                {weatherData.condition}
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </div>
+    // Updated WeatherWidget return statement
+return (
+    <div className={`bg-gradient-to-br ${getTimeBasedGradient()} p-4 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 backdrop-blur-sm border border-gray-700/30`}>
+      <div className="flex flex-col space-y-2">
+        <div className="flex items-center justify-between">
+          <span className="text-sm font-medium text-white/90">{weatherData.city}</span>
         </div>
-    );
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            {getWeatherIcon(weatherData.condition, weatherData.isDay)}
+            <div>
+              <h3 className="text-3xl font-bold text-white">
+                {weatherData.temperature}°C
+              </h3>
+              <p className="text-sm capitalize text-white/90">
+                {weatherData.condition}
+              </p>
+            </div>
+          </div>
+        </div>
+        
+      </div>
+    </div>
+  );
 }
