@@ -91,7 +91,7 @@ export class GeminiService {
 
       // Uncomment below for actual API integration
       
-      const response = await fetch(`${this.baseUrl}/models/gemini-pro:generateContent?key=${this.apiKey}`, {
+      const response = await fetch(`${this.baseUrl}/models/gemini-1.5-pro:generateContent?key=${this.apiKey}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -130,6 +130,7 @@ export class GeminiService {
         recommendation: "Please try again later.",
         additionalInfo: "Error: " + (error instanceof Error ? error.message : 'Unknown error')
       };
+      
     }
   }
 
