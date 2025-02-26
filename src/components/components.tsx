@@ -28,11 +28,6 @@ interface Insight {
   trend?: string;
 }
 
-interface GuestBirthday {
-  name: string;
-  birthday: string;
-}
-
 interface ArrivalData {
   date: string;
   arrivals: number;
@@ -81,12 +76,14 @@ interface MemberVsGeneralData {
   general_arrivals: number;
 }
 
-// Layout Component
+// Update DashboardLayout grid spacing
 export function DashboardLayout({ children }: LayoutProps) {
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
-      <h1 className="text-4xl font-bold text-gray-900 mb-8">Hotel Dashboard</h1>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div className="min-h-screen bg-gray-50 p-4 md:p-6 lg:p-8"> {/* Responsive padding */}
+      <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6 md:mb-8">
+        Hotel Dashboard
+      </h1>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
         {children}
       </div>
     </div>
@@ -94,16 +91,17 @@ export function DashboardLayout({ children }: LayoutProps) {
 }
 
 // Loading Component
+// In LoadingCard component, change bg-black to match dark theme
 export function LoadingCard() {
   return (
-    <div className="bg-black p-6 rounded-xl shadow-lg">
+    <div className="bg-gray-900 p-6 rounded-xl shadow-lg"> {/* Changed from bg-black */}
       <div className="h-5 w-24 bg-gray-700 rounded animate-pulse mb-2" />
       <div className="h-7 w-36 bg-gray-700 rounded animate-pulse" />
     </div>
   );
 }
 
-// Metrics Card Component
+// In MetricsCard component, fix text alignment
 export function MetricsCard({ title, value, percentage, trend, icon }: MetricsCardProps) {
   return (
     <div className="bg-gray-900 p-6 rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 border border-gray-800">
@@ -116,7 +114,6 @@ export function MetricsCard({ title, value, percentage, trend, icon }: MetricsCa
           )}
           <h3 className="text-gray-400 text-sm font-medium">{title}</h3>
         </div>
-
         {percentage && (
           <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-sm ${trend === 'up' ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'}`}>
             {trend === 'up' ? (
@@ -128,10 +125,8 @@ export function MetricsCard({ title, value, percentage, trend, icon }: MetricsCa
           </div>
         )}
       </div>
-
       <div className="space-y-2">
         <div className="text-3xl font-bold text-gray-100">{value}</div>
-
         {percentage && (
           <div className="w-full bg-gray-800 rounded-full h-1">
             <div
@@ -268,7 +263,7 @@ export function MemberVsGeneralChart() {
         className="bg-gray-900 p-6 rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 cursor-pointer"
         onClick={() => setIsFullScreen(true)}
       >
-        <h3 className="text-xl font-semibold text-gray-100 mb-4">
+        <h3 className="text-xl font-semibold text-gray-100 mb-4 px-4">
           Member vs. General Guests
         </h3>
         <div className="text-center mb-4">
@@ -364,7 +359,7 @@ export function OccupancyRate() {
         onClick={() => setIsFullScreen(true)}
       >
         <div className="flex items-center justify-between mb-6">
-          <h3 className="text-xl font-semibold text-gray-100">Occupancy & ADR</h3>
+        <h3 className="text-xl font-semibold text-gray-100 mb-4 px-4">Occupancy & ADR</h3>
         </div>
 
         <div className="grid gap-6">
@@ -504,64 +499,6 @@ export function ArrivalStats() {
   );
 }
 
-// Update BirthdayList to use real data
-export function BirthdayList() {
-  const [birthdays, setBirthdays] = useState<GuestBirthday[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const result = await api.getGuestBirthdays();
-        setBirthdays(result);
-      } catch (error) {
-        toast.error('Failed to load birthday data');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, []);
-
-  if (loading) return <LoadingCard />;
-
-  const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric'
-    });
-  };
-
-  return (
-    <div className="bg-gray-900 p-6 rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300">
-      <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead>
-            <tr className="text-left text-gray-400 border-b border-gray-700">
-              <th className="pb-3 font-medium">Guest</th>
-              <th className="pb-3 font-medium">Date</th>
-            </tr>
-          </thead>
-          <tbody>
-            {birthdays.map((guest, index) => (
-              <tr key={index} className="border-b border-gray-800">
-                <td className="py-4">
-                  <span className="text-gray-100">{guest.name}</span>
-                </td>
-                <td className="py-4">
-                  <span className="text-gray-300">
-                    {formatDate(guest.birthday)}
-                  </span>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-}
 
 // New Coffee Break Timer Component
 export function CoffeeBreakTimer() {
@@ -886,7 +823,7 @@ const components = {
   SearchBar,
   AlertButton,
   ArrivalStats,
-  BirthdayList,
+  //BirthdayList,
   FilterDropdown,
   TodayStatus,
   CoffeeBreakTimer,
