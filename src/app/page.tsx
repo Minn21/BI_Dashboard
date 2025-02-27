@@ -8,8 +8,7 @@ import {
   CanceledBookings,
   FilterDropdown,
   TodayStatus,
-  AgeGroupSegmentation,
-  CoffeeBreakTimer
+  AgeGroupSegmentation
 } from '../components/components';
 import { WeatherWidget } from '../components/WeatherWidget';
 import { BirthdayList } from '../components/BirthdayList';

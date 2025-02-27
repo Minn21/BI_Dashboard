@@ -500,53 +500,6 @@ export function ArrivalStats() {
 }
 
 
-// New Coffee Break Timer Component
-export function CoffeeBreakTimer() {
-  const [timeLeft, setTimeLeft] = useState(300); // 5 minutes in seconds
-  const [isRunning, setIsRunning] = useState(false);
-
-  useEffect(() => {
-    let timer: NodeJS.Timeout;
-    if (isRunning && timeLeft > 0) {
-      timer = setInterval(() => {
-        setTimeLeft(prev => prev - 1);
-      }, 1000);
-    } else if (timeLeft === 0) {
-      toast.success('Coffee break is over!');
-      setIsRunning(false);
-    }
-    return () => clearInterval(timer);
-  }, [isRunning, timeLeft]);
-
-  const handleClick = () => {
-    if (timeLeft === 0) {
-      setTimeLeft(300);
-    }
-    setIsRunning(!isRunning);
-  };
-
-  const minutes = Math.floor(timeLeft / 60);
-  const seconds = timeLeft % 60;
-
-  return (
-    <div className="bg-gray-900 p-6 rounded-xl shadow-lg">
-      <div className="flex items-center gap-3 mb-4">
-        <Coffee className="w-6 h-6 text-brown-400" />
-        <h3 className="text-xl font-semibold text-gray-100">Coffee Break Timer</h3>
-      </div>
-      <div className="text-3xl font-bold text-gray-100 mb-4">
-        {`${minutes}:${seconds.toString().padStart(2, '0')}`}
-      </div>
-      <button
-        onClick={handleClick}
-        className={`w-full py-2 rounded-lg ${isRunning ? 'bg-red-500 hover:bg-red-600' : 'bg-green-500 hover:bg-green-600'} text-white transition-colors`}
-      >
-        {isRunning ? 'Pause Break' : timeLeft === 0 ? 'Start New Break' : 'Start Break'}
-      </button>
-    </div>
-  );
-}
-
 // Filter Dropdown Component
 export function FilterDropdown() {
   const filters = ['All', 'Members', 'General Guests', 'Canceled'];
@@ -823,10 +776,8 @@ const components = {
   SearchBar,
   AlertButton,
   ArrivalStats,
-  //BirthdayList,
   FilterDropdown,
   TodayStatus,
-  CoffeeBreakTimer,
   CanceledBookings
 };
 
