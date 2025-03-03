@@ -1,16 +1,16 @@
 'use client';
 import React from 'react';
 import {
-  ArrivalStats,
-  MemberVsGeneralChart,
-  OccupancyRate,
-  KeyInsights,
-  CanceledBookings,
-  FilterDropdown,
   TodayStatus,
   AgeGroupSegmentation
 } from '../components/components';
+import { FilterDropdown } from '../components/FilterDropdown';
+import { CanceledBookings } from '../components/CanceledBookings';
+import { OccupancyRate } from '../components/OccupancyRate';
+import { KeyInsights } from '../components/KeyInsights';
 import { WeatherWidget } from '../components/WeatherWidget';
+import { ArrivalStats } from '../components/ArrivalStats';
+import { MemberVsGeneralChart } from '../components/MemberVsGeneralChart';
 import { BirthdayList } from '../components/BirthdayList';
 import { GuestSatisfaction } from '../components/GuestSatisfaction';
 import { NotificationBell } from '../components/NotificationBell';
@@ -44,11 +44,14 @@ const Dashboard = () => {
       </header>
 
       {/* Top Metrics Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 lg:gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 lg:gap-6">
         <TodayStatus />
         <OccupancyRate />
         <CanceledBookings />
         <KeyInsights />
+        <MemberVsGeneralChart />
+        <AgeGroupSegmentation />
+        
       </div>
 
       {/* Main Content Grid */}
@@ -60,12 +63,8 @@ const Dashboard = () => {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
-            <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 shadow-lg border border-gray-700/30">
-              <MemberVsGeneralChart />
-            </div>
-            <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 shadow-lg border border-gray-700/30">
-              <AgeGroupSegmentation />
-            </div>
+            
+            
           </div>
           <GuestSatisfaction />
         </div>
@@ -76,12 +75,6 @@ const Dashboard = () => {
             <BirthdayList />
           </div>
           
-          {/*<div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
-            <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 shadow-lg border border-gray-700/30">
-              <CoffeeBreakTimer />
-            </div>
-          </div>*/}
-
           {/* Enhanced Quick Actions */}
           <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 shadow-lg border border-gray-700/30">
             <h3 className="text-lg font-semibold text-gray-100 mb-6">Management Tools</h3>
