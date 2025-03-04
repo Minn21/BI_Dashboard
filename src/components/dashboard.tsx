@@ -12,6 +12,7 @@ import { MemberVsGeneralChart } from '../components/MemberVsGeneralChart';
 import { BirthdayList } from '../components/BirthdayList';
 import { GuestSatisfaction } from '../components/GuestSatisfaction';
 import { NotificationBell } from '../components/NotificationBell';
+import { reportGenerator } from './reportGenerator';
 
 // Reusable ActionButton component
 interface ActionButtonProps {
@@ -20,12 +21,21 @@ interface ActionButtonProps {
   iconBg: string;
   iconHoverBg: string;
   iconText: string;
+  onClick?: () => void;
 }
 
-const ActionButton: React.FC<ActionButtonProps> = ({ icon, text, iconBg, iconHoverBg, iconText }) => (
+const ActionButton: React.FC<ActionButtonProps> = ({ 
+  icon, 
+  text, 
+  iconBg, 
+  iconHoverBg, 
+  iconText, 
+  onClick 
+}) => (
   <button
     type="button"
     className="group p-4 bg-gray-700/30 rounded-lg hover:bg-gray-700/40 transition-all flex items-center gap-3 border border-gray-600/30"
+    onClick={onClick}  // Add this line
   >
     <div className={`p-2 ${iconBg} rounded-lg group-hover:${iconHoverBg}`}>
       <span className={iconText}>{icon}</span>
@@ -81,25 +91,28 @@ export const Dashboard = () => {
             <BirthdayList />
           </div>
 
-          {/* Enhanced Quick Actions */}
-          <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 shadow-lg border border-gray-700/30">
-            <h3 className="text-lg font-semibold text-gray-100 mb-6">Management Tools</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <ActionButton
-                icon="📊"
-                text="Generate Report"
-                iconBg="bg-blue-500/20"
-                iconHoverBg="bg-blue-500/30"
-                iconText="text-blue-400"
-              />
-              <ActionButton
-                icon="📅"
-                text="New Booking"
-                iconBg="bg-green-500/20"
-                iconHoverBg="bg-green-500/30"
-                iconText="text-green-400"
-              />
-            </div>
+          {/* Enhanced Report Section */}
+          <div className="bg-gradient-to-br from-blue-900/20 to-purple-900/20 backdrop-blur-sm rounded-2xl p-6 shadow-xl border border-blue-700/30">
+            <h3 className="text-lg font-semibold text-gray-100 mb-4">Reports & Analytics</h3>
+            <ActionButton
+              icon="📊"
+              text="Generate Comprehensive Report"
+              iconBg="bg-blue-500/30"
+              iconHoverBg="bg-blue-500/40"
+              iconText="text-blue-400"
+              onClick={async () => {
+                try {
+                  await reportGenerator.generateComprehensiveReport();
+                  alert('Report generated successfully!');
+                } catch (error) {
+                  console.error('Report generation failed', error);
+                  alert('Failed to generate report. Please try again.');
+                }
+              }}
+            />
+            <p className="text-sm text-gray-400 mt-3">
+              Includes all current metrics, charts, and AI-powered insights
+            </p>
           </div>
         </div>
       </div>
