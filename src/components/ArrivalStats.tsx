@@ -4,6 +4,9 @@ import { Users } from 'lucide-react';
 import { api } from './api';
 import toast from 'react-hot-toast';
 import { LoadingCard } from './components';
+import { FullScreenChartModal } from './FullScreenChartModal';
+import { ChartData } from './GeminiService';
+
 
 interface BookingArrivals {
   current_month_arrivals: number;
@@ -14,12 +17,18 @@ interface BookingArrivals {
 export function ArrivalStats() {
   const [arrivalData, setArrivalData] = useState<BookingArrivals | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isFullScreen, setIsFullScreen] = useState(false);
+  const [chartData, setChartData] = useState<ChartData[]>([]);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         const result = await api.getBookingArrivals();
         setArrivalData(result);
+        setChartData([
+          { name: 'Monthly Arrivals', value: result.current_month_arrivals },
+          { name: 'Yearly Arrivals', value: result.current_year_arrivals }
+        ]);
       } catch (error) {
         toast.error('Failed to load arrival data');
       } finally {
@@ -31,9 +40,13 @@ export function ArrivalStats() {
   }, []);
 
   if (loading) return <LoadingCard />;
+
   return (
-      <div className="bg-gray-900 p-6 rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 col-span-2">
-        <div className="flex items-center justify-between mb-6">
+    <>
+      <div
+        className="bg-gray-900 p-3 rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 col-span-2 cursor-pointer"
+        onClick={() => setIsFullScreen(true)}
+      > <div className="flex items-center justify-between mb-6">
           <div>
             <div className="flex items-center gap-2 mb-2">
               <Users className="w-5 h-5 text-blue-500" />
@@ -67,5 +80,15 @@ export function ArrivalStats() {
           </div>
         </div>
       </div>
+      {isFullScreen && (
+        <FullScreenChartModal
+          isOpen={isFullScreen}
+          onClose={() => setIsFullScreen(false)}
+          chartType="arrivalStats"
+          data={chartData}
+          title="Booking Arrivals Analysis"
+        />
+      )}
+    </>
     );
   }

@@ -33,7 +33,7 @@ export class GeminiService {
    * Analyze chart data using Gemini API
    */
   async analyzeChartData(
-    chartType: 'memberVsGeneral' | 'ageGroups' | 'canceledBookings' | 'occupancy',
+    chartType: 'memberVsGeneral' | 'ageGroups' | 'canceledBookings' | 'occupancy'|'arrivalStats',
     data: ChartData[],
     title: string
   ): Promise<GeminiAnalysisResponse> {
@@ -86,6 +86,20 @@ export class GeminiService {
           - insight: What this rate suggests about demand
           - recommendation: A specific action to optimize occupancy
           - additionalInfo: How this compares to industry averages (around 65-70% is typical)`;
+          break;
+        }
+        case 'arrivalStats': {
+          const monthly = data.find(item => item.name === 'Monthly Arrivals')?.value || 0;
+          const yearly = data.find(item => item.name === 'Yearly Arrivals')?.value || 0;
+          const percentage = ((monthly / yearly) * 100).toFixed(1);
+          
+          prompt = `Analyze hotel arrival statistics with ${monthly} monthly arrivals (${percentage}% of yearly total). 
+          Return only a JSON object with:
+          - keyFinding: Summary of monthly vs yearly performance
+          - insight: What this suggests about booking trends
+          - recommendation: Actions to optimize arrivals
+          - additionalInfo: How this compares to seasonal averages (around 8-10% monthly is typical)
+          remeber to keep it short to the point`;
           break;
         }
       }

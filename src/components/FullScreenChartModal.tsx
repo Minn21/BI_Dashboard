@@ -7,7 +7,7 @@ import { geminiService, ChartData, GeminiAnalysisResponse } from './GeminiServic
 interface FullScreenChartModalProps {
   isOpen: boolean;
   onClose: () => void;
-  chartType: 'memberVsGeneral' | 'ageGroups' | 'canceledBookings' | 'occupancy';
+  chartType: 'memberVsGeneral' | 'ageGroups' | 'canceledBookings' | 'occupancy' | 'arrivalStats';
   data: ChartData[];
   title: string;
 }
@@ -45,6 +45,8 @@ export function FullScreenChartModal({ isOpen, onClose, chartType, data, title }
         return ['#10B981', '#EF4444']; // Green for confirmed, Red for canceled
       case 'occupancy':
         return ['#3B82F6', '#F59E0B']; // Blue for occupied, Orange for available
+      case 'arrivalStats':
+        return ['#3B82F6', '#10B981'];
       default:
         return ['#3B82F6', '#10B981'];
     }
@@ -302,6 +304,38 @@ export function FullScreenChartModal({ isOpen, onClose, chartType, data, title }
                   </tr>
                 </tfoot>
               </table>
+            </div>
+          )}
+
+          {chartType === 'arrivalStats' && (
+            <div className="space-y-6 p-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-gray-800 p-4 rounded-lg">
+                  <h3 className="text-gray-400 mb-2">Monthly Arrivals</h3>
+                  <div className="text-3xl font-bold text-blue-400">
+                    {data.find(d => d.name === 'Monthly Arrivals')?.value}
+                  </div>
+                </div>
+                <div className="bg-gray-800 p-4 rounded-lg">
+                  <h3 className="text-gray-400 mb-2">Yearly Arrivals</h3>
+                  <div className="text-3xl font-bold text-green-400">
+                    {data.find(d => d.name === 'Yearly Arrivals')?.value}
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-gray-800 p-4 rounded-lg">
+                <h3 className="text-gray-400 mb-2">Progress Toward Yearly Goal</h3>
+                <div className="w-full bg-gray-700 rounded-full h-4">
+                  <div
+                    className="bg-blue-500 h-4 rounded-full transition-all duration-500"
+                    style={{ width: `${(data[0].value / data[1].value) * 100}%` }}
+                  />
+                </div>
+                <p className="text-gray-300 mt-2 text-sm">
+                  Current progress: {((data[0].value / data[1].value) * 100).toFixed(1)}%
+                </p>
+              </div>
             </div>
           )}
         </div>
