@@ -1,4 +1,3 @@
-// api.ts
 const API_BASE_URL = 'https://bi-dashboard-backend.vercel.app';
 
 export interface APIResponse<T> {
@@ -57,13 +56,25 @@ export interface TotalIncome {
 
 const fetchData = async <T>(endpoint: string): Promise<T> => {
   try {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`);
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      headers: {
+        'Authorization': token ? `Bearer ${token}` : '',
+      },
+    });
+
+    if (response.status === 401) {
+      localStorage.removeItem('token');
+      window.location.href = '/login';
+      throw new Error('Unauthorized');
+    }
+
     const result: APIResponse<T> = await response.json();
-    
+
     if (!result.success) {
       throw new Error(result.error || 'Failed to fetch data');
     }
-    
+
     return result.data as T;
   } catch (error) {
     console.error(`Error fetching ${endpoint}:`, error);
@@ -83,5 +94,5 @@ export const api = {
   getFrequentUnits: () => fetchData<UnitBooking[]>('/frequent-units'),
   getTotalIncome: () => fetchData<TotalIncome>('/total-income'),
   getSummaryStats: () => fetchData<{ [key: string]: number }>('/stats/summary'),
-  getMostBookedUnit: () => fetchData<UnitBooking>('/units/most-booked')
+  getMostBookedUnit: () => fetchData<UnitBooking>('/units/most-booked'),
 };

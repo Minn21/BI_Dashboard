@@ -1,7 +1,7 @@
+// app/page.tsx
 'use client';
-import React from 'react';
-import  {Dashboard} from '../components/dashboard';
+import Login from '../components/Login';
 
-export default function Page() {
-  return <Dashboard />;
+export default function HomePage() {
+  return <Login />;
 }
