@@ -54,6 +54,35 @@ export interface TotalIncome {
   total_income_year: number;
 }
 
+export interface HistoricalData {
+  month: number;
+  year: number;
+  booking_arrivals: BookingArrivals;
+  member_vs_general_arrivals: MemberVsGeneral;
+  today_arrivals_departures: TodayStatus;
+  occupancy_and_adr: OccupancyADR;
+  guest_birthdays: GuestBirthday[];
+  age_group_segmentation: AgeGroups;
+  canceled_bookings: CanceledBookings;
+  most_frequent_units: UnitBooking[];
+  total_income: TotalIncome;
+}
+
+export interface HotelData {
+  current: {
+    booking_arrivals: BookingArrivals;
+    member_vs_general_arrivals: MemberVsGeneral;
+    today_arrivals_departures: TodayStatus;
+    occupancy_and_adr: OccupancyADR;
+    guest_birthdays: GuestBirthday[];
+    age_group_segmentation: AgeGroups;
+    canceled_bookings: CanceledBookings;
+    most_frequent_units: UnitBooking[];
+    total_income: TotalIncome;
+  };
+  historical: HistoricalData[];
+}
+
 const fetchData = async <T>(endpoint: string): Promise<T> => {
   try {
     const token = localStorage.getItem('token');
@@ -83,6 +112,7 @@ const fetchData = async <T>(endpoint: string): Promise<T> => {
 };
 
 export const api = {
+  // Fetch current month data
   getBookingArrivals: () => fetchData<BookingArrivals>('/booking-arrivals'),
   getMemberVsGeneral: () => fetchData<MemberVsGeneral>('/member-vs-general'),
   getTodayStatus: () => fetchData<TodayStatus>('/today-status'),
@@ -95,4 +125,7 @@ export const api = {
   getTotalIncome: () => fetchData<TotalIncome>('/total-income'),
   getSummaryStats: () => fetchData<{ [key: string]: number }>('/stats/summary'),
   getMostBookedUnit: () => fetchData<UnitBooking>('/units/most-booked'),
+
+  // Fetch historical data
+  getHistoricalData: () => fetchData<HistoricalData[]>('/historical-data'),
 };

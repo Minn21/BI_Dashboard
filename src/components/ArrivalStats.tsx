@@ -7,7 +7,6 @@ import { LoadingCard } from './components';
 import { FullScreenChartModal } from './FullScreenChartModal';
 import { ChartData } from './GeminiService';
 
-
 interface BookingArrivals {
   current_month_arrivals: number;
   current_year_arrivals: number;
