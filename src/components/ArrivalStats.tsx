@@ -4,7 +4,7 @@ import { Users } from 'lucide-react';
 import { api } from './api';
 import toast from 'react-hot-toast';
 import { LoadingCard } from './components';
-import { FullScreenChartModal } from './FullScreenChartModal';
+import { ArrivalStatsFullScreenModal } from './ArrivalStatsFullScreenModal';
 import { ChartData } from './GeminiService';
 
 interface BookingArrivals {
@@ -53,7 +53,7 @@ export function ArrivalStats() {
             </div>
             <p className="text-sm text-gray-400">Current month arrivals: {arrivalData?.current_month_arrivals}</p>
           </div>
-  
+
           <div className="flex items-center gap-4">
             <div className="text-right">
               <p className="text-sm text-gray-400">Monthly</p>
@@ -65,7 +65,7 @@ export function ArrivalStats() {
             </div>
           </div>
         </div>
-  
+
         <div className="bg-gray-800/50 p-4 rounded-lg">
           <div className="mb-4">
             <h4 className="text-gray-300 mb-2">Monthly Performance</h4>
@@ -80,14 +80,16 @@ export function ArrivalStats() {
         </div>
       </div>
       {isFullScreen && (
-        <FullScreenChartModal
+        <ArrivalStatsFullScreenModal
           isOpen={isFullScreen}
           onClose={() => setIsFullScreen(false)}
-          chartType="arrivalStats"
-          data={chartData}
+          data={{
+            current: chartData,
+            historical: [] // Add historical data array if available
+          }}
           title="Booking Arrivals Analysis"
         />
       )}
     </>
-    );
-  }
+  );
+}

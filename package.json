@@ -40,6 +40,7 @@
     "react-router-dom": "^7.2.0",
     "react-toastify": "^11.0.5",
     "recharts": "^2.15.1",
+    "seedrandom": "^3.0.5",
     "socket.io-client": "^4.8.1",
     "svg-to-pdfkit": "^0.1.8",
     "swr": "^2.3.2"
@@ -51,6 +52,7 @@
     "@types/pdfkit": "^0.13.9",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/seedrandom": "^3.0.8",
     "eslint": "^9",
     "eslint-config-next": "15.1.6",
     "postcss": "^8",

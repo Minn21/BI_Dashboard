@@ -1,3 +1,4 @@
+import seedrandom from 'seedrandom';
 const API_BASE_URL = 'https://bi-dashboard-backend.vercel.app';
 
 export interface APIResponse<T> {

@@ -33,7 +33,7 @@ export class GeminiService {
    * Analyze chart data using Gemini API
    */
   async analyzeChartData(
-    chartType: 'memberVsGeneral' | 'ageGroups' | 'canceledBookings' | 'occupancy'|'arrivalStats',
+    chartType: 'memberVsGeneral' | 'ageGroups' | 'canceledBookings' | 'occupancy' | 'arrivalStats',
     data: ChartData[],
     title: string
   ): Promise<GeminiAnalysisResponse> {
@@ -56,8 +56,33 @@ export class GeminiService {
           - additionalInfo: How this compares to industry averages (around 55% members is average)`;
           break;
         }
+
+        // Add this case to the analyzeChartData method
         case 'ageGroups': {
-          const ageDistribution = data.map(item => 
+          if (title.includes('Historical')) {
+            prompt = `Analyze historical age group trends with ${data.length} months of data. 
+    Return only a JSON object with:
+    - keyFinding: Main trend observed
+    - insight: What the trends suggest
+    - recommendation: Long-term strategy
+    - additionalInfo: Comparison to industry trends
+    keep it short and only include the most important information`;
+          } else {
+            const ageDistribution = data.map(item =>
+              `${item.name}: ${((item.value / total) * 100).toFixed(1)}%`
+            ).join(', ');
+            prompt = `Analyze hotel guest age demographic data with this distribution: ${ageDistribution}. 
+    Return only a JSON object with:
+    - keyFinding: Identify the largest demographic group and its percentage
+    - insight: What this age distribution suggests about the hotel's appeal
+    - recommendation: A specific action the hotel could take based on this data
+    - additionalInfo: What the current age distribution suggests about the hotel's market`;
+          }
+          break;
+        }
+
+        case 'ageGroups': {
+          const ageDistribution = data.map(item =>
             `${item.name}: ${((item.value / total) * 100).toFixed(1)}%`
           ).join(', ');
           prompt = `Analyze hotel guest age demographic data with this distribution: ${ageDistribution}. 
@@ -92,7 +117,7 @@ export class GeminiService {
           const monthly = data.find(item => item.name === 'Monthly Arrivals')?.value || 0;
           const yearly = data.find(item => item.name === 'Yearly Arrivals')?.value || 0;
           const percentage = ((monthly / yearly) * 100).toFixed(1);
-          
+
           prompt = `Analyze hotel arrival statistics with ${monthly} monthly arrivals (${percentage}% of yearly total). 
           Return only a JSON object with:
           - keyFinding: Summary of monthly vs yearly performance
@@ -130,16 +155,16 @@ export class GeminiService {
 
       const responseData = await response.json();
       const analysisText = responseData.candidates[0].content.parts[0].text;
-      
+
       // Log the raw text response for debugging
       console.log("Raw Gemini response:", analysisText);
-      
+
       // Extract and parse JSON from the text response
       const cleanedJson = this.extractJsonFromText(analysisText);
-      
+
       // Normalize the response to ensure it has the expected structure
       return this.normalizeResponse(cleanedJson);
-      
+
     } catch (error) {
       console.error("Error analyzing data with Gemini:", error);
       return {
@@ -156,7 +181,7 @@ export class GeminiService {
    */
   private extractJsonFromText(text: string): any {
     // Try several approaches to extract valid JSON from the text
-    
+
     // First, try to directly parse the text as JSON (in case it's already valid JSON)
     try {
       return JSON.parse(text);
@@ -164,11 +189,11 @@ export class GeminiService {
       // If direct parsing fails, try other approaches
       console.log("Direct JSON parsing failed, trying to extract JSON from text");
     }
-    
+
     // Check for JSON in a markdown code block
     const jsonCodeBlockRegex = /```(?:json)?\s*([\s\S]*?)```/;
     const codeBlockMatch = text.match(jsonCodeBlockRegex);
-    
+
     if (codeBlockMatch && codeBlockMatch[1]) {
       try {
         return JSON.parse(codeBlockMatch[1].trim());
@@ -176,11 +201,11 @@ export class GeminiService {
         console.log("Failed to parse JSON from code block");
       }
     }
-    
+
     // Look for a JSON object with curly braces
     const jsonObjectRegex = /(\{[\s\S]*\})/;
     const objectMatch = text.match(jsonObjectRegex);
-    
+
     if (objectMatch && objectMatch[1]) {
       try {
         return JSON.parse(objectMatch[1].trim());
@@ -188,33 +213,33 @@ export class GeminiService {
         console.log("Failed to parse JSON object from text");
       }
     }
-    
+
     // If all parsing attempts fail, extract content field by field
     return this.extractFieldsFromText(text);
   }
-  
+
   /**
    * Extract fields from text when JSON parsing fails
    */
   private extractFieldsFromText(text: string): GeminiAnalysisResponse {
-    const keyFindingMatch = text.match(/(?:"|')?keyFinding(?:"|')?\s*:\s*(?:"|')?(.*?)(?:"|')?(?:,|\n|$)/i) || 
-                            text.match(/Key Finding:?\s*(.*?)(?:\n|$)/i);
-                            
-    const insightMatch = text.match(/(?:"|')?insight(?:"|')?\s*:\s*(?:"|')?(.*?)(?:"|')?(?:,|\n|$)/i) || 
-                         text.match(/Insight:?\s*(.*?)(?:\n|$)/i);
-                         
-    const recommendationMatch = text.match(/(?:"|')?recommendation(?:"|')?\s*:\s*(?:"|')?(.*?)(?:"|')?(?:,|\n|$)/i) || 
-                                text.match(/Recommendation:?\s*(.*?)(?:\n|$)/i);
-                                
-    const additionalInfoMatch = text.match(/(?:"|')?additionalInfo(?:"|')?\s*:\s*(?:"|')?(.*?)(?:"|')?(?:,|\n|$)/i) || 
-                                text.match(/(Benchmark|Trend Analysis|Additional Info):?\s*(.*?)(?:\n|$)/i);
-  
+    const keyFindingMatch = text.match(/(?:"|')?keyFinding(?:"|')?\s*:\s*(?:"|')?(.*?)(?:"|')?(?:,|\n|$)/i) ||
+      text.match(/Key Finding:?\s*(.*?)(?:\n|$)/i);
+
+    const insightMatch = text.match(/(?:"|')?insight(?:"|')?\s*:\s*(?:"|')?(.*?)(?:"|')?(?:,|\n|$)/i) ||
+      text.match(/Insight:?\s*(.*?)(?:\n|$)/i);
+
+    const recommendationMatch = text.match(/(?:"|')?recommendation(?:"|')?\s*:\s*(?:"|')?(.*?)(?:"|')?(?:,|\n|$)/i) ||
+      text.match(/Recommendation:?\s*(.*?)(?:\n|$)/i);
+
+    const additionalInfoMatch = text.match(/(?:"|')?additionalInfo(?:"|')?\s*:\s*(?:"|')?(.*?)(?:"|')?(?:,|\n|$)/i) ||
+      text.match(/(Benchmark|Trend Analysis|Additional Info):?\s*(.*?)(?:\n|$)/i);
+
     return {
       keyFinding: keyFindingMatch ? keyFindingMatch[1].trim() : "Unable to extract key finding.",
       insight: insightMatch ? insightMatch[1].trim() : "Unable to extract insight.",
       recommendation: recommendationMatch ? recommendationMatch[1].trim() : "Unable to extract recommendation.",
-      additionalInfo: additionalInfoMatch ? 
-        (additionalInfoMatch[2] ? additionalInfoMatch[2].trim() : additionalInfoMatch[1].trim()) : 
+      additionalInfo: additionalInfoMatch ?
+        (additionalInfoMatch[2] ? additionalInfoMatch[2].trim() : additionalInfoMatch[1].trim()) :
         "Unable to extract additional information."
     };
   }
