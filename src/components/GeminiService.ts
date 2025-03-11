@@ -32,45 +32,45 @@ export class GeminiService {
   /**
  * Ask a general question to the Gemini AI
  */
-async askQuestion(prompt: string): Promise<string> {
-  try {
-    const response = await fetch(`${this.baseUrl}/models/gemini-1.5-flash:generateContent?key=${this.apiKey}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        contents: [{
-          parts: [{
-            text: prompt
-          }]
-        }],
-        generationConfig: {
-          temperature: 0.7,
-          topP: 0.8,
-          topK: 40
-        }
-      })
-    });
+  async askQuestion(prompt: string): Promise<string> {
+    try {
+      const response = await fetch(`${this.baseUrl}/models/gemini-1.5-flash:generateContent?key=${this.apiKey}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{
+              text: prompt
+            }]
+          }],
+          generationConfig: {
+            temperature: 0.7,
+            topP: 0.8,
+            topK: 40
+          }
+        })
+      });
 
-    if (!response.ok) {
-      throw new Error(`Gemini API responded with status: ${response.status}`);
+      if (!response.ok) {
+        throw new Error(`Gemini API responded with status: ${response.status}`);
+      }
+
+      const responseData = await response.json();
+      const answer = responseData.candidates[0].content.parts[0].text;
+      return answer;
+    } catch (error) {
+      console.error("Error asking question to Gemini:", error);
+      return "Sorry, I couldn't process your question at the moment.";
     }
-
-    const responseData = await response.json();
-    const answer = responseData.candidates[0].content.parts[0].text;
-    return answer;
-  } catch (error) {
-    console.error("Error asking question to Gemini:", error);
-    return "Sorry, I couldn't process your question at the moment.";
   }
-}
 
   /**
    * Analyze chart data using Gemini API
    */
   async analyzeChartData(
-    chartType: 'memberVsGeneral' | 'ageGroups' | 'canceledBookings' | 'occupancy' | 'arrivalStats',
+    chartType: 'memberVsGeneral' | 'ageGroups' | 'canceledBookings' | 'occupancy' | 'arrivalStats' | 'adr',
     data: ChartData[],
     title: string
   ): Promise<GeminiAnalysisResponse> {
@@ -140,6 +140,20 @@ async askQuestion(prompt: string): Promise<string> {
           - additionalInfo: How this compares to industry averages (around 10-15% is typical)`;
           break;
         }
+
+        // In analyzeChartData switch statement
+        case 'adr': {
+          const adrValue = data[0].value;
+          prompt = `Analyze hotel Average Daily Rate (ADR) of $${adrValue}. 
+  Return only a JSON object with:
+  - keyFinding: A statement about the current ADR value
+  - insight: What this rate suggests about pricing strategy
+  - recommendation: A specific action to optimize revenue
+  - additionalInfo: How this compares to industry averages (around $120-150 is typical for standard hotels)
+  Keep responses concise and focused on revenue management.`;
+          break;
+        }
+
         case 'occupancy': {
           const occupancyPercentage = ((data.find(item => item.name === 'Occupied')?.value || 0) / total) * 100;
           prompt = `Analyze hotel occupancy data where ${occupancyPercentage.toFixed(1)}% of rooms are occupied. 

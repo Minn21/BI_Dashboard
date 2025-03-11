@@ -4,10 +4,108 @@ import React, { useState, useRef, useEffect } from 'react';
 import { api, HotelData, HistoricalData } from './api';
 import { geminiService } from './GeminiService';
 
+// Import from GuestSatisfaction component
+import { GuestSatisfaction } from './GuestSatisfaction';
+
 interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
 }
+
+// Define interfaces for Guest Satisfaction data
+interface RatingBreakdown {
+  stars: number;
+  percentage: number;
+  count: number;
+}
+
+interface SatisfactionMetric {
+  name: string;
+  value: number;
+  trend: 'up' | 'down' | 'stable';
+  percentChange: number;
+}
+
+interface HistoricalRating {
+  date: string;
+  value: number;
+}
+
+interface Review {
+  user: string;
+  date: string;
+  rating: number;
+  comment: string;
+  verified: boolean;
+}
+
+interface GuestSatisfactionData {
+  rating: number;
+  ratingTrend: {
+    direction: 'up' | 'down' | 'stable';
+    value: number;
+  };
+  ratingHistory: HistoricalRating[];
+  ratingBreakdown: RatingBreakdown[];
+  metrics: SatisfactionMetric[];
+  reviews: Review[];
+  responseRate: number;
+  avgResponseTime: string;
+}
+
+// Function to get guest satisfaction data
+const getGuestSatisfactionData = (): GuestSatisfactionData => {
+  // Initialize with the same mock data from GuestSatisfaction component
+  const initialHistory = Array.from({ length: 6 }, (_, i) => ({
+    date: `2023-0${i + 1}`,
+    value: +(4 + Math.random() * 0.5).toFixed(1)
+  }));
+  
+  const initialBreakdown = [5, 4, 3, 2, 1].map(stars => ({
+    stars,
+    percentage: Math.floor(Math.random() * (50 - 5 * stars) + 10),
+    count: Math.floor(Math.random() * 500 + 50)
+  })).sort((a, b) => b.stars - a.stars);
+
+  const metrics: SatisfactionMetric[] = [
+    { name: 'Service', value: 4.5, trend: 'up', percentChange: 5.2 },
+    { name: 'Cleanliness', value: 4.7, trend: 'up', percentChange: 2.1 },
+    { name: 'Amenities', value: 4.0, trend: 'down', percentChange: 1.8 },
+    { name: 'Value', value: 3.9, trend: 'stable', percentChange: 0.3 },
+  ];
+
+  const reviews = [
+    { user: 'John D.', date: '3 days ago', rating: 5, verified: true,
+      comment: 'Exceptional service and beautiful accommodations. The staff went above and beyond!' },
+    { user: 'Sarah M.', date: '1 week ago', rating: 4, verified: true,
+      comment: 'Great location and comfortable rooms. Breakfast was amazing!' },
+    { user: 'Michael T.', date: '2 weeks ago', rating: 3, verified: true,
+      comment: 'Room cleanliness could be improved. Staff was friendly but seemed understaffed.' },
+  ];
+
+  // Calculate trend based on rating history
+  const rating = 4.3;
+  const last = initialHistory[initialHistory.length - 1].value;
+  const prev = initialHistory[initialHistory.length - 2].value;
+  const diff = last - prev;
+  const percent = (diff / prev) * 100;
+
+  const ratingTrend = {
+    direction: diff > 0.05 ? 'up' : diff < -0.05 ? 'down' : 'stable' as 'up' | 'down' | 'stable',
+    value: +percent.toFixed(1)
+  };
+
+  return {
+    rating,
+    ratingTrend,
+    ratingHistory: initialHistory,
+    ratingBreakdown: initialBreakdown,
+    metrics,
+    reviews,
+    responseRate: 87,
+    avgResponseTime: '12h'
+  };
+};
 
 const generateDataSummary = async (): Promise<string> => {
   try {
@@ -22,6 +120,9 @@ const generateDataSummary = async (): Promise<string> => {
     
     // Fetch historical data
     const historical = await api.getHistoricalData();
+
+    // Get guest satisfaction data
+    const guestSatisfaction = getGuestSatisfactionData();
 
     const currentSummary = `
 Current Dashboard Metrics:
@@ -45,7 +146,19 @@ Historical Trends (over ${totalMonths} months):
 - Total Income: ${totalHistoricalIncome}
 `;
     }
-    return currentSummary + historicalSummary;
+
+    // Add guest satisfaction summary
+    const satisfactionSummary = `
+Guest Satisfaction Metrics:
+- Overall Rating: ${guestSatisfaction.rating.toFixed(1)}/5.0 (${guestSatisfaction.ratingTrend.direction}, ${Math.abs(guestSatisfaction.ratingTrend.value)}%)
+- Rating Breakdown: ${guestSatisfaction.ratingBreakdown.map(rb => `${rb.stars}★: ${rb.percentage}% (${rb.count} reviews)`).join(', ')}
+- Category Ratings: ${guestSatisfaction.metrics.map(m => `${m.name}: ${m.value.toFixed(1)} (${m.trend}, ${m.percentChange}%)`).join(', ')}
+- Response Rate: ${guestSatisfaction.responseRate}%
+- Average Response Time: ${guestSatisfaction.avgResponseTime}
+- Recent Reviews: ${guestSatisfaction.reviews.length} reviews in the last 14 days, average rating ${(guestSatisfaction.reviews.reduce((sum, r) => sum + r.rating, 0) / guestSatisfaction.reviews.length).toFixed(1)}
+`;
+
+    return currentSummary + historicalSummary + satisfactionSummary;
   } catch (error) {
     console.error('Error generating data summary:', error);
     return 'Error retrieving hotel data. Please try again.';
@@ -82,7 +195,7 @@ export const Chatbot: React.FC<ChatbotProps> = ({ onClose, isVisible, isMinimize
 
     try {
       const summary = await generateDataSummary();
-      const prompt = `You are an AI analytics assistant for a hotel management dashboard. Provide concise and relevant answers based on the following data:\n${summary}\nQuestion: ${input}.`;
+      const prompt = `You are an AI analytics assistant for a hotel management dashboard. Provide concise and relevant answers based on the following data:\n${summary}\nQuestion: ${input}. Focus on providing actionable insights when possible and correlations between different metrics like occupancy and guest satisfaction.`;
       const response = await geminiService.askQuestion(prompt);
       setMessages((prev) => [...prev, { role: 'assistant', content: response }]);
     } catch (err) {
@@ -147,7 +260,7 @@ export const Chatbot: React.FC<ChatbotProps> = ({ onClose, isVisible, isMinimize
         <div className="flex-1 overflow-y-auto p-4 space-y-3">
           {messages.length === 0 && (
             <div className="text-gray-400 text-sm text-center p-4">
-              Ask me about occupancy rates, bookings, or any other hotel metrics!
+              Ask me about occupancy rates, bookings, guest satisfaction, or any other hotel metrics!
             </div>
           )}
           
