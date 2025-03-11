@@ -30,6 +30,43 @@ export class GeminiService {
   }
 
   /**
+ * Ask a general question to the Gemini AI
+ */
+async askQuestion(prompt: string): Promise<string> {
+  try {
+    const response = await fetch(`${this.baseUrl}/models/gemini-1.5-flash:generateContent?key=${this.apiKey}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        contents: [{
+          parts: [{
+            text: prompt
+          }]
+        }],
+        generationConfig: {
+          temperature: 0.7,
+          topP: 0.8,
+          topK: 40
+        }
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Gemini API responded with status: ${response.status}`);
+    }
+
+    const responseData = await response.json();
+    const answer = responseData.candidates[0].content.parts[0].text;
+    return answer;
+  } catch (error) {
+    console.error("Error asking question to Gemini:", error);
+    return "Sorry, I couldn't process your question at the moment.";
+  }
+}
+
+  /**
    * Analyze chart data using Gemini API
    */
   async analyzeChartData(
