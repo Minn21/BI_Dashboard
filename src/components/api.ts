@@ -1,5 +1,7 @@
 
 const API_BASE_URL = 'https://bi-dashboard-backend.vercel.app';
+const API_CACHE = new Map<string, { data: unknown; timestamp: number }>();
+const CACHE_TTL = 60_000; // 1 minute cache
 
 export interface APIResponse<T> {
   success: boolean;
@@ -158,7 +160,7 @@ export interface HotelData {
   yoy_comparison: YoyComparison;
 }
 
-// Handles authentication and token storage
+// Updated auth service with cache management
 export const auth = {
   isAuthenticated: (): boolean => {
     return !!localStorage.getItem('token');
@@ -168,24 +170,18 @@ export const auth = {
     try {
       const response = await fetch(`${API_BASE_URL}/login`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password }),
       });
 
       const result: APIResponse<{ token: string }> = await response.json();
 
-      if (!result.success) {
+      if (!result.success || !result.data?.token) {
         throw new Error(result.error || 'Login failed');
       }
 
-      if (result.data?.token) {
-        localStorage.setItem('token', result.data.token);
-        return result.data.token;
-      } else {
-        throw new Error('No token received');
-      }
+      localStorage.setItem('token', result.data.token);
+      return result.data.token;
     } catch (error) {
       console.error('Login error:', error);
       throw error;
@@ -194,29 +190,24 @@ export const auth = {
 
   logout: (): void => {
     localStorage.removeItem('token');
-    window.location.href = '/login';
+    API_CACHE.clear();
   },
 };
 
 const fetchData = async <T>(endpoint: string): Promise<T> => {
   try {
     const token = localStorage.getItem('token');
-    
-    if (!token) {
-      window.location.href = '/login';
-      throw new Error('No authentication token found');
-    }
-    
+    if (!token) throw new Error('No authentication token found');
+
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       headers: {
-        'Authorization': `Bearer ${token}`,
+        Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
     });
 
     if (response.status === 401) {
-      localStorage.removeItem('token');
-      window.location.href = '/login';
+      auth.logout();
       throw new Error('Authentication expired');
     }
 
@@ -225,7 +216,6 @@ const fetchData = async <T>(endpoint: string): Promise<T> => {
     }
 
     const result: APIResponse<T> = await response.json();
-
     if (!result.success) {
       throw new Error(result.error || 'Failed to fetch data');
     }
@@ -237,105 +227,61 @@ const fetchData = async <T>(endpoint: string): Promise<T> => {
   }
 };
 
+const fetchWithCache = async <T>(endpoint: string): Promise<T> => {
+  const cached = API_CACHE.get(endpoint);
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+    return cached.data as T;
+  }
+
+  const data = await fetchData<T>(endpoint);
+  API_CACHE.set(endpoint, { data, timestamp: Date.now() });
+  return data;
+};
+
 export const api = {
   // Authentication
-  login: (username: string, password: string) => auth.login(username, password),
-  logout: () => auth.logout(),
-  isAuthenticated: () => auth.isAuthenticated(),
-  
-  // Fetch current month data
-  getBookingArrivals: () => fetchData<BookingArrivals>('/booking-arrivals'),
-  getMemberVsGeneral: () => fetchData<MemberVsGeneral>('/member-vs-general'),
-  getTodayStatus: () => fetchData<TodayStatus>('/today-status'),
-  getOccupancyAndADR: () => fetchData<OccupancyADR>('/occupancy-and-adr'),
-  getGuestBirthdays: () => fetchData<GuestBirthday[]>('/guest-birthdays'),
-  getTodayBirthdays: () => fetchData<GuestBirthday[]>('/guest-birthdays/today'),
-  getAgeGroups: () => fetchData<AgeGroups>('/age-groups'),
-  getCanceledBookings: () => fetchData<CanceledBookings>('/canceled-bookings'),
-  getFrequentUnits: () => fetchData<UnitBooking[]>('/frequent-units'),
-  getTotalIncome: () => fetchData<TotalIncome>('/total-income'),
-  getSummaryStats: () => fetchData<SummaryStats>('/stats/summary'),
-  getMostBookedUnit: () => fetchData<UnitBooking>('/units/most-booked'),
-  getBookings: () => fetchData<Booking[]>('/bookings'),
-  
-  // Fetch historical data
-  getHistoricalData: () => fetchData<HistoricalData[]>('/historical-data'),
-  getYearOverYearComparison: () => fetchData<YoyComparison>('/yoy-comparison'),
-  
-  // Comprehensive data fetch - fetches all needed data for dashboard
-  getAllDashboardData: async (): Promise<{
-    currentData: {
-      bookingArrivals: BookingArrivals;
-      memberVsGeneral: MemberVsGeneral;
-      todayStatus: TodayStatus;
-      occupancyAndADR: OccupancyADR;
-      guestBirthdays: GuestBirthday[];
-      todayBirthdays: GuestBirthday[];
-      ageGroups: AgeGroups;
-      canceledBookings: CanceledBookings;
-      frequentUnits: UnitBooking[];
-      totalIncome: TotalIncome;
-      summaryStats: SummaryStats;
-      mostBookedUnit: UnitBooking;
-    };
-    historicalData: HistoricalData[];
-    yoyComparison: YoyComparison;
+  login: auth.login,
+  logout: auth.logout,
+  isAuthenticated: auth.isAuthenticated,
+
+  // Cached endpoints
+  getBookingArrivals: () => fetchWithCache<BookingArrivals>('/booking-arrivals'),
+  getMemberVsGeneral: () => fetchWithCache<MemberVsGeneral>('/member-vs-general'),
+  getTodayStatus: () => fetchWithCache<TodayStatus>('/today-status'),
+  getOccupancyAndADR: () => fetchWithCache<OccupancyADR>('/occupancy-and-adr'),
+  getGuestBirthdays: () => fetchWithCache<GuestBirthday[]>('/guest-birthdays'),
+  getTodayBirthdays: () => fetchWithCache<GuestBirthday[]>('/guest-birthdays/today'),
+  getAgeGroups: () => fetchWithCache<AgeGroups>('/age-groups'),
+  getCanceledBookings: () => fetchWithCache<CanceledBookings>('/canceled-bookings'),
+  getFrequentUnits: () => fetchWithCache<UnitBooking[]>('/frequent-units'),
+  getTotalIncome: () => fetchWithCache<TotalIncome>('/total-income'),
+  getSummaryStats: () => fetchWithCache<SummaryStats>('/stats/summary'),
+  getMostBookedUnit: () => fetchWithCache<UnitBooking>('/units/most-booked'),
+  getBookings: () => fetchWithCache<Booking[]>('/bookings'),
+  getHistoricalData: () => fetchWithCache<HistoricalData[]>('/historical-data'),
+  getYearOverYearComparison: () => fetchWithCache<YoyComparison>('/yoy-comparison'),
+
+  // Optimized essential data endpoint
+  getEssentialData: async (): Promise<{
+    summary: SummaryStats;
+    occupancy: OccupancyADR;
+    cancellations: CanceledBookings;
+    revenue: TotalIncome;
+    todayStatus: TodayStatus;
   }> => {
     try {
-      // Create a batch of promises for parallel requests
-      const [
-        bookingArrivals,
-        memberVsGeneral,
-        todayStatus,
-        occupancyAndADR,
-        guestBirthdays,
-        todayBirthdays,
-        ageGroups,
-        canceledBookings,
-        frequentUnits,
-        totalIncome,
-        historicalData,
-        summaryStats,
-        mostBookedUnit,
-        yoyComparison
-      ] = await Promise.all([
-        api.getBookingArrivals(),
-        api.getMemberVsGeneral(),
-        api.getTodayStatus(),
-        api.getOccupancyAndADR(),
-        api.getGuestBirthdays(),
-        api.getTodayBirthdays(),
-        api.getAgeGroups(),
-        api.getCanceledBookings(),
-        api.getFrequentUnits(),
-        api.getTotalIncome(),
-        api.getHistoricalData(),
-        api.getSummaryStats(),
-        api.getMostBookedUnit(),
-        api.getYearOverYearComparison()
+      const [summary, occupancy, cancellations, revenue, todayStatus] = await Promise.all([
+        fetchWithCache<SummaryStats>('/stats/summary'),
+        fetchWithCache<OccupancyADR>('/occupancy-and-adr'),
+        fetchWithCache<CanceledBookings>('/canceled-bookings'),
+        fetchWithCache<TotalIncome>('/total-income'),
+        fetchWithCache<TodayStatus>('/today-status'),
       ]);
 
-      return {
-        currentData: {
-          bookingArrivals,
-          memberVsGeneral,
-          todayStatus,
-          occupancyAndADR,
-          guestBirthdays,
-          todayBirthdays,
-          ageGroups,
-          canceledBookings,
-          frequentUnits,
-          totalIncome,
-          summaryStats,
-          mostBookedUnit
-        },
-        historicalData,
-        yoyComparison
-      };
+      return { summary, occupancy, cancellations, revenue, todayStatus };
     } catch (error) {
-      console.error('Error fetching dashboard data:', error);
+      console.error('Error fetching essential data:', error);
       throw error;
     }
-  }
+  },
 };

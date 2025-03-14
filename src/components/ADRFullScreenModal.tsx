@@ -96,18 +96,20 @@ const handleAnalyzeWithAI = async () => {
             <div className="bg-gray-800 p-6 rounded-lg flex-1">
               <h3 className="text-xl text-gray-100 mb-4">ADR Trends</h3>
               <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={sampleHistoricalData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#444" />
-                  <XAxis dataKey="month" stroke="#888" />
-                  <YAxis stroke="#888" />
-                  <Tooltip 
-                    contentStyle={{ backgroundColor: '#1F2937', border: 'none', borderRadius: '0.5rem', padding: '0.5rem' }}
-                    itemStyle={{ color: '#E5E7EB' }}
-                    formatter={(value: number) => [`$${value}`, 'ADR']}
-                  />
-                  <Legend />
-                  <Bar dataKey="adr" fill="#10B981" name="ADR" />
-                </BarChart>
+              <BarChart data={sampleHistoricalData}>
+  <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+  <XAxis dataKey="month" stroke="#9CA3AF" />
+  <YAxis stroke="#9CA3AF" />
+  <Tooltip
+    contentStyle={{ 
+      backgroundColor: '#1F2937',
+      border: '1px solid #374151',
+      borderRadius: '0.375rem',
+      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+    }}
+  />
+  <Bar dataKey="adr" fill="#34D399" radius={[4, 4, 0, 0]} />
+</BarChart>
               </ResponsiveContainer>
             </div>
           </div>

@@ -34,7 +34,7 @@ export class GeminiService {
  */
   async askQuestion(prompt: string): Promise<string> {
     try {
-      const response = await fetch(`${this.baseUrl}/models/gemini-1.5-flash:generateContent?key=${this.apiKey}`, {
+      const response = await fetch(`${this.baseUrl}/models/gemini-2.0-flash:generateContent?key=${this.apiKey}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
