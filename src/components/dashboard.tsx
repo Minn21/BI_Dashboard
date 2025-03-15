@@ -140,10 +140,10 @@ export const Dashboard = () => {
               <TodayStatus />
             </div>
             <div className="lg:col-span-7 sm:col-span-2 grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-            <KeyInsights className="col-span-2 sm:col-span-1" />
-              <OccupancyRate className="col-span-2 sm:col-span-1" />
-              <ADRDisplay className="col-span-2 sm:col-span-1" />
-              <CanceledBookings className="col-span-2 sm:col-span-1" />
+            <KeyInsights />
+              <OccupancyRate />
+              <ADRDisplay />
+              <CanceledBookings />
               
             </div>
           </div>
