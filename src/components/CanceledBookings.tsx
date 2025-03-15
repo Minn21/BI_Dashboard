@@ -48,25 +48,25 @@ export function CanceledBookings() {
   return (
     <>
       <div
-        className="bg-gray-900 p-6 rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 cursor-pointer"
+        className="bg-gray-900 p-4 sm:p-6 rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 cursor-pointer"
         onClick={() => setIsFullScreen(true)}
       >
-        <h3 className="text-xl font-semibold text-gray-100 mb-6">Cancellation Status</h3>
-        <div className="bg-gray-800/50 p-4 rounded-lg">
-          <div className="flex flex-col items-center mb-4">
-            <span className={`text-3xl font-bold ${getWarningLevel(cancelData?.canceled_percentage || 0)}`}>
+        <h3 className="text-lg sm:text-xl font-semibold text-gray-100 mb-4 sm:mb-6">Cancellation Status</h3>
+        <div className="bg-gray-800/50 p-3 sm:p-4 rounded-lg">
+          <div className="flex flex-col items-center mb-3 sm:mb-4">
+            <span className={`text-2xl sm:text-3xl font-bold ${getWarningLevel(cancelData?.canceled_percentage || 0)}`}>
               {cancelData?.canceled_percentage.toFixed(1)}%
             </span>
-            <span className="text-sm text-gray-400">Cancellation Rate</span>
+            <span className="text-xs sm:text-sm text-gray-400">Cancellation Rate</span>
           </div>
-          <div className="w-full bg-gray-700 rounded-full h-2 mb-4">
+          <div className="w-full bg-gray-700 rounded-full h-2 mb-3 sm:mb-4">
             <div
               className={`h-2 rounded-full ${getWarningLevel(cancelData?.canceled_percentage || 0)}`}
               style={{ width: `${cancelData?.canceled_percentage || 0}%` }}
             />
           </div>
           <div className="text-center">
-            <span className="text-gray-400">
+            <span className="text-xs sm:text-sm text-gray-400">
               {cancelData?.canceled_bookings} bookings canceled
             </span>
           </div>

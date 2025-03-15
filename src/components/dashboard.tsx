@@ -3,7 +3,6 @@ import React, { useState, useEffect } from 'react';
 import { Chatbot } from './Chatbot';
 import { AgeGroupSegmentation } from '@/components/AgeGroupSegmentation';
 import { TodayStatus } from '../components/TodayStatus';
-import { FilterDropdown } from '../components/FilterDropdown';
 import { CanceledBookings } from '../components/CanceledBookings';
 import { OccupancyRate } from '../components/OccupancyRate';
 import { KeyInsights } from '../components/KeyInsights';
@@ -87,9 +86,9 @@ export const Dashboard = () => {
       setIsChatbotMinimized(true);
     }
   };
-
   return (
     <div className="min-h-screen bg-gray-900 p-3 sm:p-4 md:p-6 lg:p-8 space-y-4 sm:space-y-6 lg:space-y-8 overflow-x-hidden">
+      {/* Header remains unchanged */}
       {/* Existing Header */}
       <header className="flex flex-col sm:flex-row gap-4 sm:gap-6 lg:gap-8 justify-between items-start sm:items-center">
         <div className="space-y-1 sm:space-y-2 w-full sm:w-auto">
@@ -112,52 +111,51 @@ export const Dashboard = () => {
       {/* Tab Navigation */}
       <div className="flex border-b border-gray-700">
         <button
-          className={`px-4 py-2 mr-2 font-medium text-sm transition-colors duration-200 ${
-            activeTab === 'dashboard'
+          className={`px-3 py-1.5 sm:px-4 sm:py-2 mr-2 font-medium text-xs sm:text-sm transition-colors duration-200 ${activeTab === 'dashboard'
               ? 'text-blue-400 border-b-2 border-blue-400'
               : 'text-gray-400 hover:text-gray-200'
-          }`}
+            }`}
           onClick={() => setActiveTab('dashboard')}
         >
           Dashboard
         </button>
         <button
-          className={`px-4 py-2 font-medium text-sm transition-colors duration-200 ${
-            activeTab === 'bookings'
+          className={`px-4 py-2 font-medium text-sm transition-colors duration-200 ${activeTab === 'bookings'
               ? 'text-blue-400 border-b-2 border-blue-400'
               : 'text-gray-400 hover:text-gray-200'
-          }`}
+            }`}
           onClick={() => setActiveTab('bookings')}
         >
           Bookings
         </button>
+
       </div>
 
       {/* Dashboard Content */}
       {activeTab === 'dashboard' && (
         <>
           {/* Priority Metrics */}
-          <div className="grid grid-cols-2 lg:grid-cols-12 gap-2 sm:gap-4 lg:gap-6">
-            <div className="lg:col-span-5 grid grid-cols-1 gap-3 sm:gap-4 lg:gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-1 lg:grid-cols-14 gap-3 sm:gap-4 lg:gap-6">
+            <div className="lg:col-span-5 sm:col-span-2 grid grid-cols-1 gap-3 sm:gap-4 lg:gap-6">
               <TodayStatus />
             </div>
-            <div className="lg:col-span-7 grid grid-cols-4 sm:grid-cols-2 gap-3 sm:gap-4">
-              <OccupancyRate />
-              <ADRDisplay />
-              <CanceledBookings />
-              <KeyInsights />
+            <div className="lg:col-span-7 sm:col-span-2 grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+            <KeyInsights className="col-span-2 sm:col-span-1" />
+              <OccupancyRate className="col-span-2 sm:col-span-1" />
+              <ADRDisplay className="col-span-2 sm:col-span-1" />
+              <CanceledBookings className="col-span-2 sm:col-span-1" />
+              
             </div>
           </div>
 
           {/* Secondary Metrics */}
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-3 sm:gap-4 lg:gap-6">
-            
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 lg:gap-6">
             <MemberVsGeneralChart />
             <AgeGroupSegmentation />
           </div>
 
           {/* Detailed View Section */}
-          <div className="grid grid-cols-1 xl:grid-cols-[1.5fr_1fr] gap-3 sm:gap-4 lg:gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] gap-3 sm:gap-4 lg:gap-6">
             <div className="space-y-3 sm:space-y-4 lg:space-y-6">
               <ArrivalStats />
               <div className="grid grid-cols-1 gap-3 sm:gap-4 lg:gap-6">
@@ -166,9 +164,10 @@ export const Dashboard = () => {
               <GuestSatisfaction />
             </div>
             <div className="space-y-3 sm:space-y-4 lg:space-y-6">
-              <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-4 sm:p-6 shadow-lg border border-gray-700/30">
+              <div className="bg-gray-800/50 rounded-xl p-4 sm:p-6 border border-gray-700/30">
                 <BirthdayList />
               </div>
+              {/* Report section remains */}
               <div className="bg-gradient-to-br from-blue-900/20 to-purple-900/20 backdrop-blur-sm rounded-xl p-4 sm:p-6 shadow-xl border border-blue-700/30">
                 <h3 className="text-base sm:text-lg font-semibold text-gray-100 mb-3 sm:mb-4">Reports & Analytics</h3>
                 <ActionButton
@@ -196,10 +195,10 @@ export const Dashboard = () => {
         </>
       )}
 
-      {/* Bookings Content */}
+      {/* Bookings Content - Responsive padding */}
       {activeTab === 'bookings' && (
-        <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-4 sm:p-6 shadow-lg border border-gray-700/30">
-          <h2 className="text-xl font-semibold text-gray-100 mb-4">Bookings Overview</h2>
+        <div className="bg-gray-800/50 rounded-xl p-3 sm:p-4 md:p-6 border border-gray-700/30">
+          <h2 className="text-lg sm:text-xl font-semibold text-gray-100 mb-3 sm:mb-4">Bookings Overview</h2>
           <BookingsOverview />
         </div>
       )}

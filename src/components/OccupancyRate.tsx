@@ -42,19 +42,19 @@ export function OccupancyRate() {
   return (
     <>
       <div
-        className="bg-gray-900 p-6 rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 cursor-pointer"
+        className="bg-gray-900 p-4 sm:p-6 rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 cursor-pointer"
         onClick={() => setIsFullScreen(true)}
       >
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-xl font-semibold text-gray-100 mb-4 px-4">Room Occupancy</h3>
+        <div className="flex items-center justify-between mb-4 sm:mb-6">
+          <h3 className="text-lg sm:text-xl font-semibold text-gray-100 px-2 sm:px-4">Room Occupancy</h3>
         </div>
-        <div className="p-4 rounded-lg bg-gray-800/50">
-          <div className="flex items-center justify-between mb-2">
+        <div className="p-3 sm:p-4 rounded-lg bg-gray-800/50">
+          <div className="flex items-center justify-between">
             <div className="flex items-center">
-              <Percent className="mr-2 text-blue-500" size={24} />
-              <span className="text-sm text-gray-400">Current Occupancy</span>
+              <Percent className="mr-2 text-blue-500 w-5 h-5 sm:w-6 sm:h-6" />
+              <span className="text-xs sm:text-sm text-gray-400">Current Occupancy</span>
             </div>
-            <span className="text-2xl font-bold text-blue-500">
+            <span className="text-xl sm:text-2xl font-bold text-blue-500">
               {occupancyData?.occupancy_rate}%
             </span>
           </div>
