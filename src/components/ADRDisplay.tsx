@@ -22,7 +22,6 @@ export function ADRDisplay() {
         const result = await api.getOccupancyAndADR();
         setADRData({ 
           adr: result.adr,
-          trend: result.trend,
           lastUpdated: new Date().toLocaleDateString()
         });
       } catch (error) {
@@ -103,7 +102,7 @@ export function ADRDisplay() {
           isOpen={isFullScreen}
           onClose={() => setIsFullScreen(false)}
           adr={adrData?.adr || 0}
-          trend={adrData?.trend}
+          
         />
       )}
     </>
