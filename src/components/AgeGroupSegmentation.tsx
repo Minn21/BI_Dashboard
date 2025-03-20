@@ -60,87 +60,103 @@ export function AgeGroupSegmentation() {
     fetchData();
   }, []);
 
+  const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444'];
+  const totalGuests = ageData ? ageData.child + ageData.adult + ageData.middle_age + ageData.elder : 0;
+
   if (loading) {
     return (
-      <div className="bg-black p-6 rounded-xl shadow-lg">
-        <div className="h-5 w-24 bg-gray-700 rounded animate-pulse mb-2" />
-        <div className="h-7 w-36 bg-gray-700 rounded animate-pulse" />
+      <div className="bg-gray-900 p-6 rounded-xl shadow-lg space-y-4 animate-pulse">
+        <div className="h-6 w-48 bg-gray-800 rounded" />
+        <div className="flex justify-center">
+          <div className="h-64 w-64 rounded-full bg-gray-800" />
+        </div>
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="h-4 w-full bg-gray-800 rounded" />
+          ))}
+        </div>
       </div>
     );
   }
 
-  const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444'];
-  const totalGuests = ageData ? ageData.child + ageData.adult + ageData.middle_age + ageData.elder : 0;
-
-  const lineChartData = historicalAgeGroups.map(data => ({
-    label: `${new Date(data.year, data.month - 1).toLocaleString('default', { month: 'short' })} ${data.year}`,
-    child: data.child,
-    adult: data.adult,
-    middle_age: data.middle_age,
-    elder: data.elder
-  }));
-
   return (
     <>
       <div
-        className="bg-gray-900 p-6 rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 cursor-pointer"
+        className="bg-gray-900 p-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer group"
         onClick={() => setIsFullScreen(true)}
+        role="button"
+        aria-label="View age group segmentation details"
       >
-        <h3 className="text-xl font-semibold text-gray-100 mb-4">Guest Age Groups</h3>
-        <div className="text-center mb-4">
-          <p className="text-gray-400">Total guests: {totalGuests}</p>
+        <div className="flex justify-between items-start mb-6">
+          <h3 className="text-xl font-semibold text-gray-100">Guest Age Groups</h3>
+          <span className="text-sm bg-gray-800 px-3 py-1 rounded-full text-gray-300">
+            {totalGuests.toLocaleString()} total
+          </span>
         </div>
-        <div className="flex justify-center gap-4 mb-4 flex-wrap">
+        
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
           {chartData.map((entry, index) => (
-            <div key={`legend-${index}`} className="flex items-center">
+            <div 
+              key={`legend-${index}`}
+              className="flex items-center p-3 bg-gray-800 rounded-lg transition-colors hover:bg-gray-700"
+            >
               <div
-                className="w-3 h-3 rounded-full mr-2"
+                className="w-3 h-3 rounded-full mr-3 shrink-0"
                 style={{ backgroundColor: COLORS[index % COLORS.length] }}
               />
-              <span className="text-gray-300">{entry.name}: {entry.value}</span>
+              <div>
+                <p className="text-gray-300 font-medium">{entry.name}</p>
+                <p className="text-gray-400 text-sm">{entry.value.toLocaleString()}</p>
+              </div>
             </div>
           ))}
         </div>
-        <ResponsiveContainer width="100%" height={250}>
+
+        <ResponsiveContainer width="100%" height={300}>
           <PieChart>
             <Pie
               data={chartData}
               dataKey="value"
               cx="50%"
               cy="50%"
-              outerRadius={80}
-              innerRadius={40}
-              paddingAngle={3}
+              outerRadius={100}
+              innerRadius={60}
+              paddingAngle={2}
               stroke="none"
             >
               {chartData.map((entry, index) => (
                 <Cell
                   key={`cell-${index}`}
                   fill={COLORS[index % COLORS.length]}
-                  className="hover:opacity-80 transition-opacity duration-300"
+                  className="transition-opacity duration-200 hover:opacity-80"
                 />
               ))}
             </Pie>
             <Tooltip
-              contentStyle={{
-                backgroundColor: '#1F2937',
-                border: 'none',
-                borderRadius: '0.5rem',
-                padding: '0.5rem',
-              }}
-              itemStyle={{ color: '#E5E7EB' }}
-              formatter={(value: number) => [`${value} guests (${((value / totalGuests) * 100).toFixed(1)}%)`, '']}
+              content={({ payload }) => (
+                <div className="bg-gray-800 p-3 rounded-lg shadow-lg border border-gray-700">
+                  <p className="font-medium text-gray-100">{payload?.[0]?.name}</p>
+                  <p className="text-sm text-gray-300">
+                    {payload?.[0]?.value?.toLocaleString()} guests
+                    <span className="text-gray-400 ml-2">
+                      ({(payload?.[0]?.payload.percent * 100).toFixed(1)}%)
+                    </span>
+                  </p>
+                  <p className="text-xs text-gray-400 mt-1">
+                    {payload?.[0]?.payload.additionalContext}
+                  </p>
+                </div>
+              )}
             />
           </PieChart>
         </ResponsiveContainer>
       </div>
 
-
       {isFullScreen && (
         <AgeGroupFullScreenModal
           isOpen={isFullScreen}
           onClose={() => setIsFullScreen(false)}
-          data={{ current: chartData, historical: lineChartData }}
+          data={{ current: chartData, historical: historicalAgeGroups }}
           title="Guest Age Demographics Analysis"
         />
       )}
