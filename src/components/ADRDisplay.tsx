@@ -19,12 +19,25 @@ export function ADRDisplay() {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        // Check if we're in a browser environment
+        if (typeof window === 'undefined') {
+          console.log('Cannot fetch ADR data in server environment');
+          return;
+        }
+        
+        // Check authentication first
+        if (!api.isAuthenticated()) {
+          toast.error('Authentication required. Please log in again.');
+          return;
+        }
+        
         const result = await api.getOccupancyAndADR();
         setADRData({ 
           adr: result.adr,
           lastUpdated: new Date().toLocaleDateString()
         });
       } catch (error) {
+        console.error('Failed to load ADR data:', error);
         toast.error('Failed to load ADR data');
       } finally {
         setLoading(false);

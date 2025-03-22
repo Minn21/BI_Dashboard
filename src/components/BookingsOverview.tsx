@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Chart } from 'react-google-charts';
 import { api, Booking } from './api';
 
-const BookingsOverview: React.FC = () => {
+export const BookingsOverview: React.FC = () => {
   // State for bookings data, loading, error, and filters
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
@@ -30,6 +30,12 @@ const BookingsOverview: React.FC = () => {
   // Improved fetch bookings function with retry mechanism
   const fetchBookings = async (retries = 2) => {
     try {
+      // Check if we're in a browser environment
+      if (typeof window === 'undefined') {
+        console.log('Cannot fetch bookings in server environment');
+        return;
+      }
+      
       // Check authentication first
       if (!api.isAuthenticated()) {
         throw new Error('Authentication required. Please log in again.');
@@ -415,5 +421,3 @@ const BookingsOverview: React.FC = () => {
     </div>
   );
 };
-
-export default BookingsOverview;

@@ -15,7 +15,12 @@ import { NotificationBell } from '../components/NotificationBell';
 import { reportGenerator } from './reportGenerator';
 import { ADRDisplay } from '../components/ADRDisplay';
 import { RevenueForecast } from '../components/RevenueForecast';
-import BookingsOverview from '@/components/BookingsOverview'; // Import the new component
+import { RevenueSourceBreakdown } from '../components/RevenueSourceBreakdown';
+import { BookingChannelAnalysis } from '../components/BookingChannelAnalysis';
+import { YearOverYearComparison } from '../components/YearOverYearComparison';
+import { RoomTypePerformance } from '../components/RoomTypePerformance';
+import { LoyaltyTierPerformance } from '../components/LoyaltyTierPerformance';
+import { BookingsOverview } from '../components/BookingsOverview'; // Updated to use named import
 
 // ActionButton component remains unchanged
 interface ActionButtonProps {
@@ -48,7 +53,7 @@ const ActionButton: React.FC<ActionButtonProps> = ({
 );
 
 // Tab type definition
-type TabType = 'dashboard' | 'bookings';
+type TabType = 'dashboard' | 'bookings' | 'analytics';
 
 export const Dashboard = () => {
   // Add state for active tab
@@ -57,6 +62,7 @@ export const Dashboard = () => {
   const [isChatbotVisible, setIsChatbotVisible] = useState(false);
   const [isChatbotMinimized, setIsChatbotMinimized] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const handleResize = () => {
@@ -64,7 +70,16 @@ export const Dashboard = () => {
     };
     handleResize();
     window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    
+    // Simulate loading state for smoother transitions
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 800);
+    
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      clearTimeout(timer);
+    };
   }, []);
 
   const openChatbot = () => {
@@ -86,19 +101,36 @@ export const Dashboard = () => {
       setIsChatbotMinimized(true);
     }
   };
+  
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-900 responsive-p space-y-6 overflow-x-hidden">
+        <div className="flex justify-between items-center animate-pulse">
+          <div className="h-8 w-64 bg-gray-800 rounded-lg"></div>
+          <div className="h-8 w-32 bg-gray-800 rounded-lg"></div>
+        </div>
+        <div className="h-12 w-full bg-gray-800 rounded-lg animate-pulse"></div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[...Array(8)].map((_, i) => (
+            <div key={i} className="h-64 bg-gray-800 rounded-xl animate-pulse" style={{animationDelay: `${i * 0.1}s`}}></div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+  
   return (
-    <div className="min-h-screen bg-gray-900 p-3 sm:p-4 md:p-6 lg:p-8 space-y-4 sm:space-y-6 lg:space-y-8 overflow-x-hidden">
-      {/* Header remains unchanged */}
-      {/* Existing Header */}
-      <header className="flex flex-col sm:flex-row gap-4 sm:gap-6 lg:gap-8 justify-between items-start sm:items-center">
+    <div className="min-h-screen bg-gray-900 responsive-p space-y-4 sm:space-y-6 lg:space-y-8 overflow-x-hidden">
+      {/* Header with improved responsiveness */}
+      <header className="flex flex-col sm:flex-row gap-4 sm:gap-6 lg:gap-8 justify-between items-start sm:items-center animate-fade-in">
         <div className="space-y-1 sm:space-y-2 w-full sm:w-auto">
-          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-100 truncate">
+          <h1 className="responsive-text-xl font-bold text-gray-100 truncate">
             <span className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
               Hotel Management
             </span>
             <span className="text-gray-300 ml-2">Dashboard</span>
           </h1>
-          <p className="text-xs sm:text-sm text-gray-400">Real-time operational insights and metrics</p>
+          <p className="responsive-text-sm text-gray-400">Real-time operational insights and metrics</p>
         </div>
         <div className="flex flex-wrap items-center gap-2 sm:gap-3 justify-end w-full sm:w-auto">
           <NotificationBell />
@@ -108,68 +140,95 @@ export const Dashboard = () => {
         </div>
       </header>
 
-      {/* Tab Navigation */}
-      <div className="flex border-b border-gray-700">
+      {/* Tab Navigation with improved styling */}
+      <div className="flex border-b border-gray-700 overflow-x-auto scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-transparent pb-1 animate-slide-in-down">
         <button
-          className={`px-3 py-1.5 sm:px-4 sm:py-2 mr-2 font-medium text-xs sm:text-sm transition-colors duration-200 ${activeTab === 'dashboard'
+          className={`px-3 py-1.5 sm:px-4 sm:py-2 mr-2 font-medium text-xs sm:text-sm transition-colors duration-200 ${
+            activeTab === 'dashboard'
               ? 'text-blue-400 border-b-2 border-blue-400'
               : 'text-gray-400 hover:text-gray-200'
-            }`}
+          }`}
           onClick={() => setActiveTab('dashboard')}
         >
           Dashboard
         </button>
         <button
-          className={`px-4 py-2 font-medium text-sm transition-colors duration-200 ${activeTab === 'bookings'
+          className={`px-3 py-1.5 sm:px-4 sm:py-2 mr-2 font-medium text-xs sm:text-sm transition-colors duration-200 ${
+            activeTab === 'bookings'
               ? 'text-blue-400 border-b-2 border-blue-400'
               : 'text-gray-400 hover:text-gray-200'
-            }`}
+          }`}
           onClick={() => setActiveTab('bookings')}
         >
           Bookings
         </button>
-
+        <button
+          className={`px-3 py-1.5 sm:px-4 sm:py-2 mr-2 font-medium text-xs sm:text-sm transition-colors duration-200 ${
+            activeTab === 'analytics'
+              ? 'text-blue-400 border-b-2 border-blue-400'
+              : 'text-gray-400 hover:text-gray-200'
+          }`}
+          onClick={() => setActiveTab('analytics')}
+        >
+          Analytics
+        </button>
       </div>
 
-      {/* Dashboard Content */}
+      {/* Dashboard Content with improved animations and layout */}
       {activeTab === 'dashboard' && (
-        <>
+        <div className="space-y-6 animate-fade-in">
           {/* Priority Metrics */}
-          <div className="grid grid-cols-1 sm:grid-cols-1 lg:grid-cols-14 gap-3 sm:gap-4 lg:gap-6">
-            <div className="lg:col-span-5 sm:col-span-2 grid grid-cols-1 gap-3 sm:gap-4 lg:gap-6">
+          <div className="dashboard-grid-2 lg:grid-cols-[1fr_2fr] gap-3 sm:gap-4 lg:gap-6">
+            <div className="animate-slide-in-left" style={{animationDelay: '0.1s'}}>
               <TodayStatus />
             </div>
-            <div className="lg:col-span-7 sm:col-span-2 grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-            <KeyInsights />
+            <div className="dashboard-grid-4 animate-slide-in-right" style={{animationDelay: '0.2s'}}>
+              <KeyInsights />
               <OccupancyRate />
               <ADRDisplay />
               <CanceledBookings />
-              
             </div>
           </div>
 
           {/* Secondary Metrics */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 lg:gap-6">
+          <div className="dashboard-grid-2 animate-slide-in-up" style={{animationDelay: '0.3s'}}>
             <MemberVsGeneralChart />
             <AgeGroupSegmentation />
           </div>
 
+          {/* Revenue Analysis Section */}
+          <div className="dashboard-grid-2 animate-slide-in-up" style={{animationDelay: '0.4s'}}>
+            <RevenueSourceBreakdown />
+            <BookingChannelAnalysis />
+          </div>
+
+          {/* Year-over-Year & Room Performance */}
+          <div className="dashboard-grid-2 animate-slide-in-up" style={{animationDelay: '0.5s'}}>
+            <YearOverYearComparison />
+            <RoomTypePerformance />
+          </div>
+
+          {/* Guest Loyalty & Detailed Analysis */}
+          <div className="dashboard-grid-2 animate-slide-in-up" style={{animationDelay: '0.6s'}}>
+            <LoyaltyTierPerformance />
+            <GuestSatisfaction />
+          </div>
+
           {/* Detailed View Section */}
-          <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] gap-3 sm:gap-4 lg:gap-6">
+          <div className="dashboard-grid-1 lg:grid-cols-[1.5fr_1fr] gap-3 sm:gap-4 lg:gap-6 animate-slide-in-up" style={{animationDelay: '0.7s'}}>
             <div className="space-y-3 sm:space-y-4 lg:space-y-6">
               <ArrivalStats />
-              <div className="grid grid-cols-1 gap-3 sm:gap-4 lg:gap-6">
+              <div className="dashboard-grid-1 gap-3 sm:gap-4 lg:gap-6">
                 <RevenueForecast />
               </div>
-              <GuestSatisfaction />
             </div>
             <div className="space-y-3 sm:space-y-4 lg:space-y-6">
-              <div className="bg-gray-800/50 rounded-xl p-4 sm:p-6 border border-gray-700/30">
+              <div className="dashboard-card">
                 <BirthdayList />
               </div>
-              {/* Report section remains */}
-              <div className="bg-gradient-to-br from-blue-900/20 to-purple-900/20 backdrop-blur-sm rounded-xl p-4 sm:p-6 shadow-xl border border-blue-700/30">
-                <h3 className="text-base sm:text-lg font-semibold text-gray-100 mb-3 sm:mb-4">Reports & Analytics</h3>
+              {/* Report section with improved styling */}
+              <div className="bg-gradient-to-br from-blue-900/20 to-purple-900/20 backdrop-blur-sm rounded-xl responsive-p shadow-xl border border-blue-700/30">
+                <h3 className="dashboard-card-title mb-3 sm:mb-4">Reports & Analytics</h3>
                 <ActionButton
                   icon="📊"
                   text="Generate Comprehensive Report"
@@ -186,39 +245,60 @@ export const Dashboard = () => {
                     }
                   }}
                 />
-                <p className="text-xs sm:text-sm text-gray-400 mt-2 sm:mt-3">
+                <p className="responsive-text-sm text-gray-400 mt-2 sm:mt-3">
                   Includes all current metrics, charts, and AI-powered insights
                 </p>
               </div>
             </div>
           </div>
-        </>
-      )}
-
-      {/* Bookings Content - Responsive padding */}
-      {activeTab === 'bookings' && (
-        <div className="bg-gray-800/50 rounded-xl p-3 sm:p-4 md:p-6 border border-gray-700/30">
-          <h2 className="text-lg sm:text-xl font-semibold text-gray-100 mb-3 sm:mb-4">Bookings Overview</h2>
-          <BookingsOverview />
         </div>
       )}
 
-      {/* Chatbot */}
-      {isChatbotOpen && (
-        <Chatbot
-          onClose={closeChatbot}
-          isVisible={isChatbotVisible}
-          isMinimized={isChatbotMinimized}
-          onMinimize={toggleMinimizeChatbot}
-        />
+      {/* Bookings Content with improved styling */}
+      {activeTab === 'bookings' && (
+        <div className="dashboard-card animate-fade-in">
+          <h2 className="dashboard-card-title mb-3 sm:mb-4">Bookings Overview</h2>
+          <BookingsOverview />
+        </div>
       )}
+      
+      {/* Analytics Content */}
+      {activeTab === 'analytics' && (
+        <div className="dashboard-grid-1 gap-6 animate-fade-in">
+          <div className="dashboard-card">
+            <h2 className="dashboard-card-title mb-6">Advanced Analytics</h2>
+            
+            <div className="dashboard-grid-2 gap-6">
+              <YearOverYearComparison />
+              <RoomTypePerformance />
+            </div>
+            
+            <div className="dashboard-grid-2 gap-6 mt-6">
+              <LoyaltyTierPerformance />
+              <BookingChannelAnalysis />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Chatbot UI */}
+      {isChatbotOpen && (
+        <div
+          className={`fixed bottom-4 right-4 w-full max-w-md transition-all duration-300 ease-in-out z-50 ${
+            isChatbotVisible ? 'opacity-100 transform translate-y-0' : 'opacity-0 transform translate-y-4'
+          } ${isChatbotMinimized ? 'h-14' : 'h-[600px]'}`}
+        >
+          <Chatbot onClose={closeChatbot} onMinimize={toggleMinimizeChatbot} isMinimized={isChatbotMinimized} isVisible={isChatbotVisible} />
+        </div>
+      )}
+
+      {/* Floating action button for chatbot */}
       {!isChatbotOpen && (
         <button
           onClick={openChatbot}
-          className="fixed bottom-4 sm:bottom-6 right-4 sm:right-6 w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-blue-600 text-white shadow-lg hover:bg-blue-700 flex items-center justify-center z-40 transition-all"
-          aria-label="Open chat assistant"
+          className="fixed bottom-4 right-4 bg-blue-500 hover:bg-blue-600 text-white p-3 rounded-full shadow-lg transition-all duration-300 z-40 flex items-center justify-center"
         >
-          <span className="text-xl sm:text-2xl">💬</span>
+          <span className="material-icons text-2xl">chat</span>
         </button>
       )}
     </div>

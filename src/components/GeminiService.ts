@@ -333,5 +333,8 @@ export class GeminiService {
 
 // Create and export a singleton instance
 export const geminiService = new GeminiService(
-  process.env.NEXT_PUBLIC_GEMINI_API_KEY || '',
+  // Check if we're in a browser environment before accessing process.env
+  typeof window !== 'undefined' 
+    ? process.env.NEXT_PUBLIC_GEMINI_API_KEY || '' 
+    : '',
 );

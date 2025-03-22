@@ -1,4 +1,3 @@
-
 const API_BASE_URL = 'https://bi-dashboard-backend.vercel.app';
 const API_CACHE = new Map<string, { data: unknown; timestamp: number }>();
 const CACHE_TTL = 60_000; // 1 minute cache
@@ -163,7 +162,11 @@ export interface HotelData {
 // Updated auth service with cache management
 export const auth = {
   isAuthenticated: (): boolean => {
-    return !!localStorage.getItem('token');
+    // Check if we're in a browser environment before accessing localStorage
+    if (typeof window !== 'undefined') {
+      return !!localStorage.getItem('token');
+    }
+    return false;
   },
 
   login: async (username: string, password: string): Promise<string> => {
@@ -196,6 +199,11 @@ export const auth = {
 
 const fetchData = async <T>(endpoint: string): Promise<T> => {
   try {
+    // Check if we're in a browser environment before accessing localStorage
+    if (typeof window === 'undefined') {
+      throw new Error('Cannot fetch data in server environment');
+    }
+    
     const token = localStorage.getItem('token');
     if (!token) throw new Error('No authentication token found');
 

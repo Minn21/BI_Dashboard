@@ -25,24 +25,32 @@ export function ADRFullScreenModal({ isOpen, onClose, adr }: ADRFullScreenModalP
     { month: 'Jun', adr: Math.round((adr * 1.08) * 100) / 100 },
   ];
 
-  // Modify handleAnalyzeWithAI to use analyzeChartData
-const handleAnalyzeWithAI = async () => {
+  const handleAnalyzeClick = async () => {
     setIsAnalyzing(true);
     setShowAnalysis(true);
     try {
-      const analysisResult = await geminiService.analyzeChartData(
-        'adr',
-        [{ name: 'ADR', value: adr }],
-        'ADR Analysis'
-      );
-      setAnalysis(analysisResult);
+      // Make sure we're in a browser environment
+      if (typeof window === 'undefined') {
+        throw new Error('Cannot use Gemini service in server environment');
+      }
+      
+      // Prepare data for analysis
+      const chartData = sampleHistoricalData.map(item => ({
+        name: item.month,
+        value: item.adr
+      }));
+      
+      // Call the Gemini service with error handling
+      const result = await geminiService.analyzeChartData('adr', chartData, 'ADR Trend Analysis');
+      setAnalysis(result);
     } catch (error) {
-      console.error('Failed to fetch analysis:', error);
+      console.error('Error analyzing ADR data:', error);
+      // Provide a fallback analysis when the API fails
       setAnalysis({
-        keyFinding: 'Analysis failed.',
-        insight: 'Error occurred while analyzing ADR data.',
-        recommendation: 'Please try again later.',
-        additionalInfo: 'Error: ' + (error instanceof Error ? error.message : 'Unknown error'),
+        keyFinding: "Unable to generate AI analysis at this time.",
+        insight: "The system encountered an error while analyzing the ADR data.",
+        recommendation: "Please try again later or contact support if the issue persists.",
+        additionalInfo: "This is a fallback analysis due to an error with the AI service."
       });
     } finally {
       setIsAnalyzing(false);
@@ -117,7 +125,7 @@ const handleAnalyzeWithAI = async () => {
           {!showAnalysis && (
             <div className="flex justify-center mt-6">
               <button
-                onClick={handleAnalyzeWithAI}
+                onClick={handleAnalyzeClick}
                 className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
               >
                 <BrainCircuit size={20} />

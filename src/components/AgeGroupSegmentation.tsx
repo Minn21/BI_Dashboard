@@ -156,7 +156,16 @@ export function AgeGroupSegmentation() {
         <AgeGroupFullScreenModal
           isOpen={isFullScreen}
           onClose={() => setIsFullScreen(false)}
-          data={{ current: chartData, historical: historicalAgeGroups }}
+          data={{ 
+            current: chartData, 
+            historical: historicalAgeGroups.map(group => ({
+              label: `${group.month}/${group.year}`,
+              child: group.child,
+              adult: group.adult,
+              middle_age: group.middle_age,
+              elder: group.elder
+            }))
+          }}
           title="Guest Age Demographics Analysis"
         />
       )}
